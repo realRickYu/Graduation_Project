@@ -88,7 +88,7 @@ Rect C3DLaserSensorFeatureExtraction::ModifyROI(Mat ImgGray,Rect OriginalROI,int
 
 ////////////À©Õ¹¸ÐÐËÈ¤ÇøÓò,ÔÚ²»³¬¹ýÍ¼Æ¬±ß½çµÄÇé¿öÏÂ
 /////////// ÏòÉÏÏòÏÂÀ©Õ¹Ò»¶¨µÄÏñËØ(ÉÏÏÂ·Ö±ðÀ©Õ¹10¸öÏñËØ¿Ï¶¨¹»ÁË)
-Rect C3DLaserSensorFeatureExtraction::ExtendedROI(Mat ImgGray,Rect OutRect,int PixelNum/*=10*/)
+Rect C3DLaserSensorFeatureExtraction::ExtendedROI(const Mat &ImgGray,const Rect &OutRect,int PixelNum/*=10*/)
 {
 	Rect ROIRect;
 	ROIRect.y=(OutRect.y-10>0)?(OutRect.y-10):(0);
@@ -99,7 +99,7 @@ Rect C3DLaserSensorFeatureExtraction::ExtendedROI(Mat ImgGray,Rect OutRect,int P
 }
 
 //////////// È·¶¨³õÊ¼¹âµ¶ÏßµÄÖÐÐÄÎ»ÖÃ
-Mat C3DLaserSensorFeatureExtraction::OriginalCenter(Mat LaserStripSmoothed)
+Mat C3DLaserSensorFeatureExtraction::OriginalCenter(const Mat &LaserStripSmoothed)
 {
 	double SumMax(0);
 	double SumVaue(0);
@@ -116,8 +116,12 @@ Mat C3DLaserSensorFeatureExtraction::OriginalCenter(Mat LaserStripSmoothed)
 			if (SumMax<SumVaue)
 			{
 				SumMax=SumVaue;
-				Index.at<double>(0,ColNum)=(double)(RowsNum+3);                
+				Index.at<double>(0,ColNum)=(double)(RowsNum+3);
 			}
+		}
+		if (Index.at<double>(0, ColNum) > (LaserStripSmoothed.rows - 1) || int(Index.at<double>(0, ColNum)) == -1)
+		{
+			Index.at<double>(0, ColNum) = LaserStripSmoothed.rows - 1;
 		}
 	}
 
@@ -125,7 +129,7 @@ Mat C3DLaserSensorFeatureExtraction::OriginalCenter(Mat LaserStripSmoothed)
 }
 
 /////////// È·¶¨¹âµ¶ÏßµÄ±ß½ç»Ò¶ÈãÐÖµ£¬È·¶¨¹âµ¶ÏßµÄ¿í¶È
-Mat C3DLaserSensorFeatureExtraction::DetermineEdgeValue(Mat LaserStripSmoothed,Mat Index)
+Mat C3DLaserSensorFeatureExtraction::DetermineEdgeValue(const Mat &LaserStripSmoothed,const Mat &Index)
 {
 	/// ¼ÆËã¹âµ¶ÏßµÄ±ß½çãÐÖµ£¬È·¶¨¹âµ¶ÏßµÄ¿í¶È(modified in version 4 2014Äê6ÔÂ11ÈÕ)
 	Mat I(1,1,CV_64FC1,0);
@@ -150,10 +154,9 @@ Mat C3DLaserSensorFeatureExtraction::DetermineEdgeValue(Mat LaserStripSmoothed,M
 			AverageValue.at<double>(0,CNum)+=LaserStripSmoothed.at<double>(RNum,CNum);
 			Point1Count++;
 		}
-		if (0!=Point1Count)
+		if (Point1Count != 0)
 		{
 			AverageValue.at<double>(0,CNum)=AverageValue.at<double>(0,CNum)/Point1Count;
-
 		} 
 		else
 		{
@@ -199,7 +202,7 @@ Mat C3DLaserSensorFeatureExtraction::DetermineEdgeValue(Mat LaserStripSmoothed,M
 }
 
 ////////////
-Mat C3DLaserSensorFeatureExtraction::DetermineCenters(Mat LaserStripSmoothed,Mat Index, Mat ThresholdValue,Rect ROIRect)
+Mat C3DLaserSensorFeatureExtraction::DetermineCenters(const Mat &LaserStripSmoothed, const Mat &Index, const Mat &ThresholdValue, const Rect &ROIRect)
 {
 	//// ÀûÓÃ³õÊ¼ÖÐÐÄºÍ¹âµ¶ÏßµÄ±ß½çãÐÖµ¼ÆËã¸ÐÐËÈ¤ÇøÓòµÄ¹âµ¶ÏßÖÐÐÄ
 	Mat  Center(1,2,CV_64FC1,Scalar::all(0));
@@ -247,7 +250,7 @@ Mat C3DLaserSensorFeatureExtraction::DetermineCenters(Mat LaserStripSmoothed,Mat
 }
 
 //////// modified in 20150505 
-Mat C3DLaserSensorFeatureExtraction::CameraCoorDatas(Mat ImageDatas, Mat CameraMatrix, Mat DistCoeffs, Mat LaserPlaneParas)
+Mat C3DLaserSensorFeatureExtraction::CameraCoorDatas(const Mat &ImageDatas, const Mat &CameraMatrix, const Mat &DistCoeffs, const Mat &LaserPlaneParas)
 {
 	/////////Ê×ÏÈÉ¸Ñ¡²»ÄÜ·´Ó³±»²âÌØÕ÷µÄImageDatas
 	Mat DefaultDatas(1,3,CV_64FC1,Scalar(10000));
@@ -811,7 +814,7 @@ Mat C3DLaserSensorFeatureExtraction::HoughCircle(Mat axesMat, int num, vector<Ma
 }
 
 //180525 È¡Æ±ÊýÅÅÔÚÇ°NÃûµÄµã£¬¶ø·ÇÈ¡×î¸ßÆ±Êý
-Mat C3DLaserSensorFeatureExtraction::HoughCircle2(vector<Mat> Camera3DData, vector<Mat> vecXYRoted, Mat XYRoted, double min_r, double max_r, double step_r/* = 0.1 */, double step_theta/* = 0.01*/, double CircleMeanErrorThreshold/* =0.2 */, double CircleGrossErrorCoe/* =0.1 */, double CircleNormalErrorCoe/* =3 */)
+Mat C3DLaserSensorFeatureExtraction::HoughCircle2(Mat &XYRoted, double min_r, double max_r, double step_r/* = 0.1 */, double step_theta/* = 0.01*/, double CircleMeanErrorThreshold/* =0.2 */, double CircleGrossErrorCoe/* =0.1 */, double CircleNormalErrorCoe/* =3 */)
 {
 	#define NOMINATE 3
 	
@@ -943,11 +946,17 @@ Mat C3DLaserSensorFeatureExtraction::HoughCircle2(vector<Mat> Camera3DData, vect
 	y /= NOMINATE;
 	r /= NOMINATE;
 
+	Mat studCenter(1, 3, CV_64FC1, Scalar(-1));
+	studCenter.at<double>(0, 0) = x;
+	studCenter.at<double>(0, 1) = y;
+	studCenter.at<double>(0, 2) = XYRoted.at<double>(0, 2);
+	return studCenter;
+
 	//double x = double(X_index) / 10 + min_X - max_r;
 	//double y = double(Y_index) / 10 + min_Y - max_r;
 	//double r = double(r_index) / 100;
 
-	CircleFit3DInfo studInfo;
+	//CircleFit3DInfo studInfo;
 
 	//double radius_error = max_r;
 
@@ -995,50 +1004,50 @@ Mat C3DLaserSensorFeatureExtraction::HoughCircle2(vector<Mat> Camera3DData, vect
 	//if (max == 0)
 	//	return defaultStudCenter;
 
-	while (1)
-	{
-		//¸ù¾ÝHoughÔ²±ä»»Çó³öµÄ³õÊ¼ÖÐÐÄ£¬É¸Ñ¡³öÐèÒªµÄµã
-		Mat finalPickedData;
-		int max = 0;
-		for (int i = 0; i != vecXYRoted.size(); i++)
-		{
-			if (vecXYRoted[i].empty())
-				continue;
+	//while (1)
+	//{
+	//	//¸ù¾ÝHoughÔ²±ä»»Çó³öµÄ³õÊ¼ÖÐÐÄ£¬É¸Ñ¡³öÐèÒªµÄµã
+	//	Mat finalPickedData;
+	//	int max = 0;
+	//	for (int i = 0; i != vecXYRoted.size(); i++)
+	//	{
+	//		if (vecXYRoted[i].empty())
+	//			continue;
 
-			int num = 0;
-			Mat error;
-			Mat XDistance = (vecXYRoted[i].col(0) - x).mul(vecXYRoted[i].col(0) - x);
-			Mat YDistance = (vecXYRoted[i].col(1) - y).mul(vecXYRoted[i].col(1) - y);
-			cv::sqrt(XDistance + YDistance, error);
-			error = error - r;
-			//È¥³ýÒì³£µã
-			Mat pickedData;
-			for (int cnt = 0; cnt < error.rows; cnt++)
-			{
-				if (std::abs(error.at<double>(cnt, 0)) < step_r)
-				{
-					pickedData.push_back(Camera3DData[i].row(cnt));
-					num++;
-				}
-			}
-			if (num > max)
-			{
-				max = num;
-				finalPickedData = Camera3DData[i];
-				Mat neg(1, vecXYRoted[i].cols, CV_64FC1, Scalar(0));
-				vecXYRoted[i] = neg;
-			}
-		}
+	//		int num = 0;
+	//		Mat error;
+	//		Mat XDistance = (vecXYRoted[i].col(0) - x).mul(vecXYRoted[i].col(0) - x);
+	//		Mat YDistance = (vecXYRoted[i].col(1) - y).mul(vecXYRoted[i].col(1) - y);
+	//		cv::sqrt(XDistance + YDistance, error);
+	//		error = error - r;
+	//		//È¥³ýÒì³£µã
+	//		Mat pickedData;
+	//		for (int cnt = 0; cnt < error.rows; cnt++)
+	//		{
+	//			if (std::abs(error.at<double>(cnt, 0)) < step_r)
+	//			{
+	//				pickedData.push_back(Camera3DData[i].row(cnt));
+	//				num++;
+	//			}
+	//		}
+	//		if (num > max)
+	//		{
+	//			max = num;
+	//			finalPickedData = Camera3DData[i];
+	//			Mat neg(1, vecXYRoted[i].cols, CV_64FC1, Scalar(0));
+	//			vecXYRoted[i] = neg;
+	//		}
+	//	}
 
-		if (finalPickedData.rows < 10)
-			return defaultStudCenter;
+	//	if (finalPickedData.rows < 10)
+	//		return defaultStudCenter;
 
-		studInfo = CircleFit3D(finalPickedData);
+	//	studInfo = CircleFit3D(finalPickedData);
 
-		if (abs(studInfo.Radius - r) < (max_r - min_r))
-			break;
-	}
-	return studInfo.Center.t();
+	//	if (abs(studInfo.Radius - r) < (max_r - min_r))
+	//		break;
+	//}
+	//return studInfo.Center.t();
 }
 
 //180525 È¡Æ±ÊýÅÅÔÚÇ°NÃûµÄµã£¬¶ø·ÇÈ¡×î¸ßÆ±Êý
@@ -1263,7 +1272,7 @@ Mat C3DLaserSensorFeatureExtraction::HoughCircle2(Mat axesMat, int num, vector<M
 	return studInfo.Center.t();
 }
 
-Point3d C3DLaserSensorFeatureExtraction::calcPCA(Mat Camera3DData)
+Point3d C3DLaserSensorFeatureExtraction::calcPCA(const Mat &Camera3DData)
 {
 	Mat meanPoint(1, Camera3DData.cols, CV_64FC1, cvScalar(0));
 	//ÇóÈ¡Æ½¾ùÖµ
@@ -1327,7 +1336,7 @@ double C3DLaserSensorFeatureExtraction::EliminateGrossError(Mat Error,double Mea
 	return StdThreshold;  
 }
 
-PlaneFit3DInfo C3DLaserSensorFeatureExtraction::PlaneFit3D(Mat X,int flag/* =0 */)
+PlaneFit3DInfo C3DLaserSensorFeatureExtraction::PlaneFit3D(const Mat &X,int flag/* =0 */)
 {
 	//// X(:,1)=x X(:,2)=y X(:,3)=z
 	PlaneFit3DInfo PlaneFitInfo;
@@ -1448,7 +1457,7 @@ LMCircleFitInfo C3DLaserSensorFeatureExtraction::LMCircleFit2D(Mat XY,int MaxIte
 		{
 			GJ(Range(X.rows,GJ.rows),Range().all())=lambda_sqrt*I;
 			DelPar=GJ.inv(DECOMP_SVD)*Gg;
-			Progress=norm(DelPar,NORM_L2)/(norm(LSInfo.Par)+eps);
+			Progress = cv::norm(DelPar, NORM_L2) / (cv::norm(LSInfo.Par) + eps);
 			if (Progress<eps)
 			{
 				break;
@@ -1522,7 +1531,7 @@ Mat C3DLaserSensorFeatureExtraction::Angvec2r(double theta,Mat k)
 }
 
 
-RotToZInfo C3DLaserSensorFeatureExtraction::RotToZ(Mat XY,Mat VT)
+RotToZInfo C3DLaserSensorFeatureExtraction::RotToZ(const Mat &XY,const Mat &VT)
 {
 	RotToZInfo RotInfo;
 	Mat Z(3,1,CV_64FC1,Scalar(0));
@@ -1617,7 +1626,7 @@ CircleFit3DInfo C3DLaserSensorFeatureExtraction::CircleFit3D(Mat X,double Circle
 ////////////////////////////
 
 /////// ÀûÓÃÆ½Ãæ¶È¶ÔÄâºÏÊý¾Ý½øÐÐÉ¸Ñ¡ modified in 20150603
-Mat C3DLaserSensorFeatureExtraction::PlaneThreshod(Mat PlaneFitData, double PlaneMeanErrorThreshold/* =0.2 */,double PlaneGrossErrorCoe/* =0.5 */,double PlaneNormalErrorCoe/* =3 */)
+Mat C3DLaserSensorFeatureExtraction::PlaneThreshod(Mat &PlaneFitData, double PlaneMeanErrorThreshold/* =0.2 */,double PlaneGrossErrorCoe/* =0.5 */,double PlaneNormalErrorCoe/* =3 */)
 {
 	/////// ÏÈÈ¥µô·µ»ØÄ¬ÈÏÖµµÄÊý¾Ý
 	Mat DefaultValue(1,3,CV_64FC1,Scalar(10000));
@@ -1665,12 +1674,12 @@ Mat C3DLaserSensorFeatureExtraction::PlaneThreshod(Mat PlaneFitData, double Plan
 #pragma  region /////±»²âÌØÕ÷ÌáÈ¡²Ù×÷
 
 #pragma region/////// È«²¿µãÔÆÌáÈ¡Ëã·¨(ÌØÕ÷´úºÅ 0) modified in 20150511
-Mat C3DLaserSensorFeatureExtraction::LaserSensorPointCloudsExtraction(Mat Img, int Threshold/* =150 */, int ArcLengthValue/* =50 */, Size KernelSize/* =Size */)
+Mat C3DLaserSensorFeatureExtraction::LaserSensorPointCloudsExtraction(Mat Img, int Threshold/* =150 */, int ArcLengthValue/* =50 */, Size2i KernelSize/* =Size */)
 {  
 	return LaserStripeExtraction(Img,Threshold,ArcLengthValue,KernelSize);
 }
 
-Mat C3DLaserSensorFeatureExtraction::LaserStripeExtraction(Mat Img,int Threshold/* =150 */,int ArcLengthValue/* =50 */,Size KernelSize/* =Size */)
+Mat C3DLaserSensorFeatureExtraction::LaserStripeExtraction(Mat Img,int Threshold/* =150 */,int ArcLengthValue/* =50 */,Size2i KernelSize/* =Size */)
 {
 
 	Mat ImgGray;
@@ -1754,7 +1763,7 @@ Mat C3DLaserSensorFeatureExtraction::LaserStripeExtraction(Mat Img,int Threshold
 #pragma endregion
 
 #pragma region  //Ô²ÖùÌØÕ÷ÌáÈ¡£¨ÌØÕ÷´úºÅ11£© modified in 20151125
-vector<Mat> C3DLaserSensorFeatureExtraction::LaserSensorCylinderExtraction(Mat Img, int uplimit, int downlimint, int leftlimit, int rightlimit, int Threshold/* =150 */, int ArcLengthValue/* =50 */, Size KernelSize/* =Size */)  //·µ»ØÖùÃæÄâºÏËùÐèµÄµãÔÆÊý¾Ý
+vector<Mat> C3DLaserSensorFeatureExtraction::LaserSensorCylinderExtraction(Mat Img, int uplimit, int downlimint, int leftlimit, int rightlimit, int Threshold/* =150 */, int ArcLengthValue/* =50 */, Size2i KernelSize/* =Size */)  //·µ»ØÖùÃæÄâºÏËùÐèµÄµãÔÆÊý¾Ý
 {
     Mat DefaultCylinderPoints(1, 2, CV_64FC1, cvScalar(-1));
     Mat DefaultPCAPoints(1, 2, CV_64FC1, cvScalar(-1));
@@ -1789,7 +1798,7 @@ vector<Mat> C3DLaserSensorFeatureExtraction::LaserSensorCylinderExtraction(Mat I
 	//¶ÔÆäÏÈ½øÐÐ±ÕÔËËã modified in 20150515
 	Mat ImgFirstROI;
 	Mat ImgFirstROIOpen(ImgGray,FirstRect);
-	const Size CKernalSize(5, 5);
+	const Size2i CKernalSize(5, 5);
 	Mat StructurElement=getStructuringElement(MORPH_ELLIPSE,CKernalSize);
 	morphologyEx(ImgFirstROIOpen,ImgFirstROI,MORPH_CLOSE,StructurElement); 
 
@@ -1931,7 +1940,7 @@ vector<Mat> C3DLaserSensorFeatureExtraction::LaserSensorCylinderExtraction(Mat I
 	}
 }
 
-Mat C3DLaserSensorFeatureExtraction::LaserSensorStudExtraction3(Mat Img, int uplimit, int downlimint, int leftlimit, int rightlimit, int Threshold/* =150 */, int ArcLengthValue/* =50 */, Size KernelSize/* =Size */)  //·µ»ØÖùÃæÄâºÏËùÐèµÄµãÔÆÊý¾Ý£¬Õë¶ÔÂÝÑÀµÄÓÅ»¯£¬Ð§¹ûÒ»°ã
+Mat C3DLaserSensorFeatureExtraction::LaserSensorStudExtraction3(Mat Img, int uplimit, int downlimint, int leftlimit, int rightlimit, int Threshold/* =150 */, int ArcLengthValue/* =50 */, Size2i KernelSize/* =Size2i */)  //·µ»ØÖùÃæÄâºÏËùÐèµÄµãÔÆÊý¾Ý£¬Õë¶ÔÂÝÑÀµÄÓÅ»¯£¬Ð§¹ûÒ»°ã
 {
 	Mat defaultAllPoints(1, 2, CV_64FC1, cvScalar(-1));
 
@@ -1960,7 +1969,7 @@ Mat C3DLaserSensorFeatureExtraction::LaserSensorStudExtraction3(Mat Img, int upl
 	//¶ÔÆäÏÈ½øÐÐ±ÕÔËËã modified in 20150515
 	Mat ImgFirstROI;
 	Mat ImgFirstROIOpen(ImgGray, FirstRect);
-	const Size CKernalSize(5, 5);
+	const Size2i CKernalSize(5, 5);
 	Mat StructurElement = getStructuringElement(MORPH_ELLIPSE, CKernalSize);
 	morphologyEx(ImgFirstROIOpen, ImgFirstROI, MORPH_CLOSE, StructurElement);
 
@@ -2129,7 +2138,7 @@ Mat C3DLaserSensorFeatureExtraction::LaserSensorStudExtraction3(Mat Img, int upl
 	return allPoints;
 }
 
-Rect C3DLaserSensorFeatureExtraction::getRect(Mat Img, int uplimit, int downlimint, int leftlimit, int rightlimit)
+Rect C3DLaserSensorFeatureExtraction::getRect(const Mat &Img, int uplimit, int downlimint, int leftlimit, int rightlimit, bool full)
 {
 	Rect defaultRect;
 	defaultRect.x = 0;
@@ -2159,7 +2168,7 @@ Rect C3DLaserSensorFeatureExtraction::getRect(Mat Img, int uplimit, int downlimi
 
 	Mat ImgFirstROI;
 	Mat ImgFirstROIOpen(ImgGray, FirstRect);
-	const Size CKernalSize(5, 5);
+	const Size2i CKernalSize(5, 5);
 	Mat StructurElement = getStructuringElement(MORPH_ELLIPSE, CKernalSize);
 	morphologyEx(ImgFirstROIOpen, ImgFirstROI, MORPH_CLOSE, StructurElement);
 
@@ -2178,8 +2187,13 @@ Rect C3DLaserSensorFeatureExtraction::getRect(Mat Img, int uplimit, int downlimi
 	calcHist(&ImgFirstROI, 1, channels, Mat(), hist, 1, histSize, ranges);
 
 	Threshold = GetIterativeBestThreshold(hist);
+	//Threshold = Get1DMaxEntropyThreshold(hist);
 
-	if (Threshold == 1)
+	if (Threshold <= 1)
+	{
+		return defaultRect;
+	}
+	if ((Threshold < 30) && (!full))
 	{
 		return defaultRect;
 	}
@@ -2187,7 +2201,15 @@ Rect C3DLaserSensorFeatureExtraction::getRect(Mat Img, int uplimit, int downlimi
 	threshold(ImgFirstROI, ImgBinary, Threshold, 255, THRESH_TOZERO);
 	findContours(ImgBinary, Contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
 	std::sort(Contours.begin(), Contours.end(), LengthDown);
-	ROIOutRect = boundingRect(Contours.at(0));
+	if (!Contours.empty())
+	{
+		ROIOutRect = boundingRect(Contours.at(0));
+		//½«¸ÐÐËÈ¤ÇøÓòµÄ¾ØÐÎ¿òÔÚÕûÕÅÍ¼Æ¬ÖÐ±í´ï³öÀ´
+	}
+	else
+	{
+		return defaultRect;
+	}
 	//Rect ROIOutRect2 = boundingRect(Contours.at(1));
 	//Rect PicROI2;
 	PicROI.x = FirstRect.x + ROIOutRect.x;
@@ -2202,7 +2224,82 @@ Rect C3DLaserSensorFeatureExtraction::getRect(Mat Img, int uplimit, int downlimi
 
 }
 
-Mat C3DLaserSensorFeatureExtraction::LaserSensorStudExtraction2(Mat Img, int uplimit, int downlimint, int leftlimit, int rightlimit, int Threshold/* =150 */, int ArcLengthValue/* =50 */, Size KernelSize/* =Size */)  //·µ»ØÖùÃæÄâºÏËùÐèµÄµãÔÆÊý¾Ý
+Rect C3DLaserSensorFeatureExtraction::getRect(const int &Threshold, const Mat &Img, int uplimit, int downlimint, int leftlimit, int rightlimit, bool full)
+{
+	Rect defaultRect;
+	defaultRect.x = 0;
+	defaultRect.y = 0;
+	defaultRect.width = 0;
+	defaultRect.height = 0;
+
+	Rect FirstRect;
+	FirstRect.x = leftlimit;
+	FirstRect.y = uplimit;
+	FirstRect.width = rightlimit - leftlimit + 1;
+	FirstRect.height = downlimint - uplimit + 1;
+
+	Mat ImgGray;
+	if (Img.rows < 1)
+	{
+		return defaultRect;
+	}
+	if (Img.channels() == 3)
+	{
+		cvtColor(Img, ImgGray, CV_BGR2GRAY);
+	}
+	else
+	{
+		ImgGray = Img;
+	}
+
+	Mat ImgFirstROI;
+	Mat ImgFirstROIOpen(ImgGray, FirstRect);
+	const Size2i CKernalSize(5, 5);
+	Mat StructurElement = getStructuringElement(MORPH_ELLIPSE, CKernalSize);
+	morphologyEx(ImgFirstROIOpen, ImgFirstROI, MORPH_CLOSE, StructurElement);
+
+	Mat ImgBinary;
+	vector<vector<Point>> Contours;
+	Rect ROIOutRect;  //ÂÖÀªµÄÍâ½Ó¾ØÐÎ	
+	Rect PicROI;
+	Rect ExtendRect;  //À©Õ¹ºóµÄ¸ÐÐËÈ¤ÇøÓò
+
+	if (Threshold <= 1)
+	{
+		return defaultRect;
+	}
+	if ((Threshold < 30) && (!full))
+	{
+		return defaultRect;
+	}
+
+	threshold(ImgFirstROI, ImgBinary, Threshold, 255, THRESH_TOZERO);
+	findContours(ImgBinary, Contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
+	std::sort(Contours.begin(), Contours.end(), LengthDown);
+	if (!Contours.empty())
+	{
+		ROIOutRect = boundingRect(Contours.at(0));
+		//½«¸ÐÐËÈ¤ÇøÓòµÄ¾ØÐÎ¿òÔÚÕûÕÅÍ¼Æ¬ÖÐ±í´ï³öÀ´
+	}
+	else
+	{
+		return defaultRect;
+	}
+	//Rect ROIOutRect2 = boundingRect(Contours.at(1));
+	//Rect PicROI2;
+	PicROI.x = FirstRect.x + ROIOutRect.x;
+	PicROI.y = FirstRect.y + ROIOutRect.y;
+	PicROI.width = ROIOutRect.width;
+	PicROI.height = ROIOutRect.height;
+	//PicROI2.x = FirstRect.x + ROIOutRect2.x;
+	//PicROI2.y = FirstRect.y + ROIOutRect2.y;
+	//PicROI2.width = ROIOutRect2.width;
+	//PicROI2.height = ROIOutRect2.height;
+	return PicROI;
+
+}
+
+Mat C3DLaserSensorFeatureExtraction::LaserSensorStudExtraction2(Mat Img, int uplimit, int downlimint, int leftlimit, int rightlimit, int Threshold/* =150 */, int ArcLengthValue/* =50 */, Size2i KernelSize/* =Size */)  //·µ»ØÖùÃæÄâºÏËùÐèµÄµãÔÆÊý¾Ý
 {
     Mat defaultAllPoints(1, 2, CV_64FC1, cvScalar(-1));
 
@@ -2231,7 +2328,7 @@ Mat C3DLaserSensorFeatureExtraction::LaserSensorStudExtraction2(Mat Img, int upl
 	//¶ÔÆäÏÈ½øÐÐ±ÕÔËËã modified in 20150515
 	Mat ImgFirstROI;
 	Mat ImgFirstROIOpen(ImgGray,FirstRect);
-	const Size CKernalSize(5, 5);
+	const Size2i CKernalSize(5, 5);
 	Mat StructurElement=getStructuringElement(MORPH_ELLIPSE,CKernalSize);
 	morphologyEx(ImgFirstROIOpen,ImgFirstROI,MORPH_CLOSE,StructurElement); 
 
@@ -2338,7 +2435,42 @@ Mat C3DLaserSensorFeatureExtraction::LaserSensorStudExtraction2(Mat Img, int upl
 	return allPoints;
 }
 
-int C3DLaserSensorFeatureExtraction::GetIterativeBestThreshold(MatND HistGram)
+int C3DLaserSensorFeatureExtraction::Get1DMaxEntropyThreshold(const MatND &HistGram)
+{
+	int  X, Y, Amount = 0;
+	double HistGramD[256];
+	double SumIntegral, EntropyBack, EntropyFore, MaxEntropy;
+	int MinValue = 255, MaxValue = 0;
+	int Threshold = 0;
+
+	for (MinValue = 0; MinValue < 256 && HistGram.at<float>(MinValue) == 0; MinValue++);
+	for (MaxValue = 255; MaxValue > MinValue && HistGram.at<float>(MinValue) == 0; MaxValue--);
+	if (MaxValue == MinValue) return MaxValue;          // Í¼ÏñÖÐÖ»ÓÐÒ»¸öÑÕÉ«             
+	if (MinValue + 1 == MaxValue) return MinValue;      // Í¼ÏñÖÐÖ»ÓÐ¶þ¸öÑÕÉ«
+
+	for (Y = MinValue; Y <= MaxValue; Y++) Amount += HistGram.at<float>(Y);        //  ÏñËØ×ÜÊý
+
+	for (Y = MinValue; Y <= MaxValue; Y++)   HistGramD[Y] = (double)HistGram.at<float>(Y) / Amount + 1e-17;
+
+	MaxEntropy = (double)MinValue;
+	for (Y = MinValue + 1; Y < MaxValue; Y++)
+	{
+		SumIntegral = 0;
+		for (X = MinValue; X <= Y; X++) SumIntegral += HistGramD[X];
+		EntropyBack = 0;
+		for (X = MinValue; X <= Y; X++) EntropyBack += (-HistGramD[X] / SumIntegral * log(HistGramD[X] / SumIntegral));
+		EntropyFore = 0;
+		for (X = Y + 1; X <= MaxValue; X++) EntropyFore += (-HistGramD[X] / (1 - SumIntegral) * log(HistGramD[X] / (1 - SumIntegral)));
+		if (MaxEntropy < EntropyBack + EntropyFore)
+		{
+			Threshold = Y;
+			MaxEntropy = EntropyBack + EntropyFore;
+		}
+	}
+	return Threshold;
+}
+
+int C3DLaserSensorFeatureExtraction::GetIterativeBestThreshold(const MatND &HistGram)
 {
 	int X, Iter = 0;
 	int MeanValueOne, MeanValueTwo, SumOne, SumTwo, SumIntegralOne, SumIntegralTwo;
@@ -2430,7 +2562,7 @@ int C3DLaserSensorFeatureExtraction::GetOSTUThreshold(MatND HistGram)
 }
 
 
-void VerticalProjection(Mat srcImage, int Threshold, Rect &ROIOutRect)//´¹Ö±»ý·ÖÍ¶Ó°
+void VerticalProjection(const Mat &srcImage, int Threshold, Rect &ROIOutRect)//´¹Ö±»ý·ÖÍ¶Ó°
 {
 	Mat srcImageBin;
 	int cnt=0;
@@ -2526,7 +2658,7 @@ void VerticalProjection(Mat srcImage, int Threshold, Rect &ROIOutRect)//´¹Ö±»ý·Ö
 	delete[] colswidth;//ÊÍ·ÅÇ°ÃæÉêÇëµÄ¿Õ¼ä
 }
 
-void HorizonProjection(Mat srcImage, int Threshold, Rect &ROIOutRect)//Ë®Æ½»ý·ÖÍ¶Ó°
+void HorizonProjection(const Mat &srcImage, int Threshold, Rect &ROIOutRect)//Ë®Æ½»ý·ÖÍ¶Ó°
 {
 	Mat srcImageBin;
 	int cnt = 0;
@@ -2600,7 +2732,7 @@ void HorizonProjection(Mat srcImage, int Threshold, Rect &ROIOutRect)//Ë®Æ½»ý·ÖÍ
 
 }
 
-Mat C3DLaserSensorFeatureExtraction::LaserSensorStudExtraction2(string strImagePath, Mat Img, int uplimit, int downlimint, int leftlimit, int rightlimit, int ArcLengthValue/* =50 */, Size KernelSize/* =Size */)  //·µ»ØÖùÃæÄâºÏËùÐèµÄµãÔÆÊý¾Ý
+Mat C3DLaserSensorFeatureExtraction::LaserSensorStudExtraction2(string strImagePath, Mat Img, int uplimit, int downlimint, int leftlimit, int rightlimit, int ArcLengthValue/* =50 */, Size2i KernelSize/* =Size */)  //·µ»ØÖùÃæÄâºÏËùÐèµÄµãÔÆÊý¾Ý
 {
 	Mat defaultAllPoints(1, 2, CV_64FC1, cvScalar(-1));
 
@@ -2629,7 +2761,7 @@ Mat C3DLaserSensorFeatureExtraction::LaserSensorStudExtraction2(string strImageP
 	//¶ÔÆäÏÈ½øÐÐ±ÕÔËËã modified in 20150515
 	Mat ImgFirstROI;
 	Mat ImgFirstROIOpen(ImgGray, FirstRect);
-	const Size CKernalSize(5, 5);
+	const Size2i CKernalSize(5, 5);
 	Mat StructurElement = getStructuringElement(MORPH_ELLIPSE, CKernalSize);
 	morphologyEx(ImgFirstROIOpen, ImgFirstROI, MORPH_CLOSE, StructurElement);
 
@@ -2869,7 +3001,7 @@ Mat C3DLaserSensorFeatureExtraction::LaserSensorStudExtraction2(string strImageP
 	return allPoints;
 }
 
-Mat C3DLaserSensorFeatureExtraction::LaserSensorStudExtraction(Mat Img, int uplimit, int downlimint, int leftlimit, int rightlimit, bool studFlag, int widthValue, Size KernelSize/* =Size */)
+Mat C3DLaserSensorFeatureExtraction::LaserSensorStudExtraction(int num, const Mat &Img, int uplimit, int downlimint, int leftlimit, int rightlimit, bool studFlag, int widthValue, Size2i KernelSize/* =Size */)
 {
 	Mat defaultAllPoints(1, 2, CV_64FC1, cvScalar(-1));
 
@@ -2898,7 +3030,7 @@ Mat C3DLaserSensorFeatureExtraction::LaserSensorStudExtraction(Mat Img, int upli
 	//¶ÔÆäÏÈ½øÐÐ±ÕÔËËã modified in 20150515
 	Mat ImgFirstROI;
 	Mat ImgFirstROIOpen(ImgGray, FirstRect);
-	const Size CKernalSize(5, 5);
+	const Size2i CKernalSize(5, 5);
 	Mat StructurElement = getStructuringElement(MORPH_ELLIPSE, CKernalSize);
 	morphologyEx(ImgFirstROIOpen, ImgFirstROI, MORPH_CLOSE, StructurElement);
 
@@ -2914,12 +3046,45 @@ Mat C3DLaserSensorFeatureExtraction::LaserSensorStudExtraction(Mat Img, int upli
 	calcHist(&ImgFirstROI, 1, channels, Mat(), hist, 1, histSize, ranges);
 
 	Threshold = GetIterativeBestThreshold(hist);
+	//Threshold = Get1DMaxEntropyThreshold(hist);
+
+	//string strHistPath = "Hist.txt";
+	//LaserSensorIO.WriteRowFirstAPP(strHistPath, hist);
+
+	Mat test(1, 6, CV_64FC1, cvScalar(-1));
+	test.at<double>(0, 0) = num;
+	test.at<double>(0, 1) = Threshold;
+	test.at<double>(0, 2) = uplimit;
+	test.at<double>(0, 3) = downlimint;
+	test.at<double>(0, 4) = leftlimit;
+	test.at<double>(0, 5) = rightlimit;
+	stringstream a;
+	string strNum;
+	a << num;
+	a >> strNum;
+	string strThresholdPath = "Threshold.txt";
+	LaserSensorIO.WriteRowFirstAPP(strThresholdPath, test);
 
 	if (studFlag)
 	{
-		if (Threshold < 30) return defaultAllPoints;
+		//if (Threshold < 30) return defaultAllPoints;
 		VerticalProjection(ImgFirstROI, Threshold, ROIOutRect);
 		HorizonProjection(ImgFirstROI, Threshold, ROIOutRect);
+		if (ROIOutRect.width < widthValue * 1.0 / 2.0)
+		{
+			Mat ImgBinary;
+			vector<vector<Point>> Contours;
+			threshold(ImgFirstROI, ImgBinary, Threshold, 255, THRESH_TOZERO);  //Ö÷ÒªÎªÁËÌáÈ¡¹âµ¶ÏßµÄÂÖÀª
+			//Ñ°ÕÒÂÖÀªfindContours
+			findContours(ImgBinary, Contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
+			//×Ô¶¨Òåº¯Êý °´ÂÖÀªÖÜ³¤´óÐ¡ÅÅÐò
+			std::sort(Contours.begin(), Contours.end(), LengthDown);
+			if (!Contours.empty())
+			{
+				ROIOutRect = boundingRect(Contours.at(0));
+				//½«¸ÐÐËÈ¤ÇøÓòµÄ¾ØÐÎ¿òÔÚÕûÕÅÍ¼Æ¬ÖÐ±í´ï³öÀ´
+			}
+		}
 	}
 	else
 	{
@@ -2933,31 +3098,13 @@ Mat C3DLaserSensorFeatureExtraction::LaserSensorStudExtraction(Mat Img, int upli
 		ROIOutRect = boundingRect(Contours.at(0));
 		//½«¸ÐÐËÈ¤ÇøÓòµÄ¾ØÐÎ¿òÔÚÕûÕÅÍ¼Æ¬ÖÐ±í´ï³öÀ´
 	}
-
 	PicROI.x = FirstRect.x + ROIOutRect.x;
 	PicROI.y = FirstRect.y + ROIOutRect.y;
 	PicROI.width = ROIOutRect.width;
 	PicROI.height = ROIOutRect.height;
 	if (studFlag)
 	{
-		//double centre = (leftlimit + rightlimit) / 2.0;
-		//if (((PicROI.x - leftlimit) > ((centre - PicROI.x) * 1)) ||
-		//	(rightlimit - (PicROI.x + PicROI.width - 1)) > ((PicROI.x + PicROI.width - 1 - centre) * 1))
-		//{
-		//	return defaultAllPoints;
-		//}
-
-		//if ((centre - PicROI.x) < (PicROI.x + PicROI.width - 1 - centre))
-		//{
-		//	PicROI.width = 2 * (centre - PicROI.x);
-		//}
-		//else
-		//{
-		//	double temp = PicROI.x + PicROI.width - 1 - centre;
-		//	PicROI.x = centre - temp;
-		//	PicROI.width = 2 * temp;
-		//}
-		if (ROIOutRect.width < widthValue * 2 / 3)
+		if (ROIOutRect.width < widthValue * 1.0 / 2.0)
 		{
 			return defaultAllPoints;
 		}
@@ -2966,12 +3113,16 @@ Mat C3DLaserSensorFeatureExtraction::LaserSensorStudExtraction(Mat Img, int upli
 	{
 		if (PicROI.x < 400)
 		{
-			PicROI.x = 400;
 			PicROI.width = PicROI.width - (400 - PicROI.x);
+			PicROI.x = 400;
 		}
-		if ((PicROI.x + PicROI.width)>900)
+		if ((PicROI.x + PicROI.width) > 900)
 		{
 			PicROI.width = 900 - PicROI.x;
+		}
+		if (PicROI.width < 1)
+		{
+			return defaultAllPoints;
 		}
 	}
 
@@ -3057,7 +3208,346 @@ Mat C3DLaserSensorFeatureExtraction::LaserSensorStudExtraction(Mat Img, int upli
 	return allPoints;
 }
 
-Mat C3DLaserSensorFeatureExtraction::LaserSensorStudExtraction(Mat Img, int uplimit, int downlimint, int leftlimit, int rightlimit, int Threshold/* =150 */, int ArcLengthValue/* =50 */, Size KernelSize/* =Size */)  //·µ»ØÖùÃæÄâºÏËùÐèµÄµãÔÆÊý¾Ý
+Mat C3DLaserSensorFeatureExtraction::LaserSensorStudExtraction(const int &Threshold, int num, const Mat &Img, int uplimit, int downlimint, int leftlimit, int rightlimit, bool studFlag, int widthValue, Size2i KernelSize/* =Size */)
+{
+	Mat defaultAllPoints(1, 2, CV_64FC1, cvScalar(-1));
+
+	Rect FirstRect;
+	FirstRect.x = leftlimit;
+	FirstRect.y = uplimit;
+	FirstRect.width = rightlimit - leftlimit + 1;
+	FirstRect.height = downlimint - uplimit + 1;
+
+	Mat ImgGray;
+	if (Img.rows < 1)
+	{
+		return defaultAllPoints;
+	}
+	if (Img.channels() == 3)
+	{
+		cvtColor(Img, ImgGray, CV_BGR2GRAY);
+	}
+	else
+	{
+		ImgGray = Img;
+	}
+
+	Mat allPoints;
+
+	//¶ÔÆäÏÈ½øÐÐ±ÕÔËËã modified in 20150515
+	Mat ImgFirstROI;
+	Mat ImgFirstROIOpen(ImgGray, FirstRect);
+	const Size2i CKernalSize(5, 5);
+	Mat StructurElement = getStructuringElement(MORPH_ELLIPSE, CKernalSize);
+	morphologyEx(ImgFirstROIOpen, ImgFirstROI, MORPH_CLOSE, StructurElement);
+
+	Rect ROIOutRect;  //ÂÖÀªµÄÍâ½Ó¾ØÐÎ	
+	Rect PicROI;
+
+	//string strHistPath = "Hist.txt";
+	//LaserSensorIO.WriteRowFirstAPP(strHistPath, hist);
+
+	if (studFlag)
+	{
+		//if (Threshold < 30) return defaultAllPoints;
+		VerticalProjection(ImgFirstROI, Threshold, ROIOutRect);
+		HorizonProjection(ImgFirstROI, Threshold, ROIOutRect);
+		if (ROIOutRect.width < widthValue * 1.0 / 2.0)
+		{
+			Mat ImgBinary;
+			vector<vector<Point>> Contours;
+			threshold(ImgFirstROI, ImgBinary, Threshold, 255, THRESH_TOZERO);  //Ö÷ÒªÎªÁËÌáÈ¡¹âµ¶ÏßµÄÂÖÀª
+			//Ñ°ÕÒÂÖÀªfindContours
+			findContours(ImgBinary, Contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
+			//×Ô¶¨Òåº¯Êý °´ÂÖÀªÖÜ³¤´óÐ¡ÅÅÐò
+			std::sort(Contours.begin(), Contours.end(), LengthDown);
+			if (!Contours.empty())
+			{
+				ROIOutRect = boundingRect(Contours.at(0));
+				//½«¸ÐÐËÈ¤ÇøÓòµÄ¾ØÐÎ¿òÔÚÕûÕÅÍ¼Æ¬ÖÐ±í´ï³öÀ´
+			}
+		}
+	}
+	else
+	{
+		Mat ImgBinary;
+		vector<vector<Point>> Contours;
+		threshold(ImgFirstROI, ImgBinary, Threshold, 255, THRESH_TOZERO);  //Ö÷ÒªÎªÁËÌáÈ¡¹âµ¶ÏßµÄÂÖÀª
+		//Ñ°ÕÒÂÖÀªfindContours
+		findContours(ImgBinary, Contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
+		//×Ô¶¨Òåº¯Êý °´ÂÖÀªÖÜ³¤´óÐ¡ÅÅÐò
+		std::sort(Contours.begin(), Contours.end(), LengthDown);
+		ROIOutRect = boundingRect(Contours.at(0));
+		//½«¸ÐÐËÈ¤ÇøÓòµÄ¾ØÐÎ¿òÔÚÕûÕÅÍ¼Æ¬ÖÐ±í´ï³öÀ´
+	}
+	PicROI.x = FirstRect.x + ROIOutRect.x;
+	PicROI.y = FirstRect.y + ROIOutRect.y;
+	PicROI.width = ROIOutRect.width;
+	PicROI.height = ROIOutRect.height;
+	if (studFlag)
+	{
+		if (ROIOutRect.width < widthValue * 1.0 / 2.0)
+		{
+			return defaultAllPoints;
+		}
+	}
+	else
+	{
+		if (PicROI.x < 400)
+		{
+			PicROI.width = PicROI.width - (400 - PicROI.x);
+			PicROI.x = 400;
+		}
+		if ((PicROI.x + PicROI.width) > 900)
+		{
+			PicROI.width = 900 - PicROI.x;
+		}
+		if (PicROI.width < 1)
+		{
+			return defaultAllPoints;
+		}
+	}
+
+	//ÐÞÕý¸ÐÐËÈ¤ÇøÓò
+	//ÔÚ²»³¬³öÍ¼Æ¬±ß½çµÄÇé¿öÏÂ£¬½«¸ÐÐËÈ¤ÇøÓòÏòÉÏÏÂ·Ö±ðÀ©Õ¹10¸öÏñËØ
+	Rect ExtendRect = ExtendedROI(ImgGray, PicROI);
+	//²»ÓÃ½øÐÐ¸ÐÐËÈ¤ÇøÓòµÄ¸´ÖÆ
+	Mat LaserStripeROI(ImgGray, ExtendRect);
+	Mat LaserStripSmoothedUchar, LaserStripSmoothed;
+	GaussianBlur(LaserStripeROI, LaserStripSmoothedUchar, KernelSize, 0, 0);
+	LaserStripSmoothedUchar.convertTo(LaserStripSmoothed, CV_64FC1);  //ÀàÐÍ×ª»»
+
+	//imwrite(strImagePath, LaserStripSmoothed);
+	//imshow("", LaserStripSmoothedUchar);
+	//waitKey(0);
+
+	//È·¶¨¹âµ¶ÏßµÄ³õÊ¼ÖÐÐÄÎ»ÖÃ
+	Mat Index = OriginalCenter(LaserStripSmoothed);
+
+	if (Index.cols != LaserStripSmoothed.cols)  //²»ÏàµÈÔò²»½øÐÐ¼ÆËã modified in 20151030
+	{
+		LaserSensorIO.WriteLog("Error(11):IndexÓëLaserStripeSmoothedÁÐÊý²»µÈ!");
+		return defaultAllPoints;
+	}
+
+	//¼ÆËã¹âµ¶ÏßµÄ±ß½çãÐÖµ£¬È·¶¨¹âµ¶ÏßµÄ¿í¶È
+	Mat EdgeThresholdValue = DetermineEdgeValue(LaserStripSmoothed, Index);
+
+	if (EdgeThresholdValue.cols != LaserStripSmoothed.cols) /////// ²»ÏàµÈÔò²»½øÐÐ¼ÆËã modified in 20151030
+	{
+		LaserSensorIO.WriteLog("Error(11):EdgeThresholdValueÓëLaserStripeSmoothedÁÐÊý²»µÈ!");
+		return defaultAllPoints;
+	}
+
+	//ÀûÓÃ³õÊ¼ÖÐÐÄºÍ¹âµ¶ÏßµÄ±ß½çãÐÖµ¼ÆËã¸ÐÐËÈ¤ÇøÓòµÄ¹âµ¶ÏßÖÐÐÄ
+	Mat LaserROIStripeCenters = DetermineCenters(LaserStripSmoothed, Index, EdgeThresholdValue, ExtendRect);
+
+	for (int i = 0; i != LaserROIStripeCenters.rows;)
+	{
+		int num1 = 0, num2 = 0;
+		double avg1 = 0, avg2 = 0;
+		//ÏòÉÏ×î¶àÈ¡5¸öµã±È½ÏÒ»´Î
+		for (int rowNum = i - 1; rowNum > i - 6 && rowNum >= 0; rowNum--) //180517 Ô­°æ
+		{
+			avg1 += LaserROIStripeCenters.at<double>(rowNum, 0);
+			num1++;
+		}
+		if (num1 != 0)
+		{
+			avg1 = avg1 / num1;
+			if (abs(LaserROIStripeCenters.at<double>(i, 0) - avg1) > 10) //180517 Ô­°æ
+			{
+				deleteRow(LaserROIStripeCenters, i);
+				continue;
+			}
+		}
+
+		//ÏòÏÂ×î¶àÈ¡5¸öµãÔÙ±È½ÏÒ»´Î
+		for (int rowNum = i + 1; rowNum < i + 6 && rowNum < LaserROIStripeCenters.rows; rowNum++) //180517 Ô­°æ
+		{
+			avg2 += LaserROIStripeCenters.at<double>(rowNum, 0);
+			num2++;
+		}
+		if (num2 != 0)
+		{
+			avg2 = avg2 / num2;
+			if (abs(LaserROIStripeCenters.at<double>(i, 0) - avg2) > 10) //180517 Ô­°æ
+			{
+				deleteRow(LaserROIStripeCenters, i);
+				continue;
+			}
+		}
+
+		i++;
+	}
+
+	//½«¸ÐÐËÈ¤ÇøÓòµÄ¹âµ¶ÖÐÐÄ´æ´¢ 
+	allPoints.push_back(LaserROIStripeCenters);
+
+	if (allPoints.empty())
+		return defaultAllPoints;
+
+	return allPoints;
+}
+
+Mat C3DLaserSensorFeatureExtraction::LaserSensorStudExtraction15(Mat Img, int uplimit, int downlimint, int leftlimit, int rightlimit, Rect &PicROI, Size2i KernelSize/* =Size */)
+{
+	Mat defaultAllPoints(1, 2, CV_64FC1, cvScalar(-1));
+
+	Rect FirstRect;
+	FirstRect.x = leftlimit;
+	FirstRect.y = uplimit;
+	FirstRect.width = rightlimit - leftlimit + 1;
+	FirstRect.height = downlimint - uplimit + 1;
+
+	Mat ImgGray;
+	if (Img.rows < 1)
+	{
+		return defaultAllPoints;
+	}
+	if (Img.channels() == 3)
+	{
+		cvtColor(Img, ImgGray, CV_BGR2GRAY);
+	}
+	else
+	{
+		ImgGray = Img;
+	}
+
+	Mat allPoints;
+
+	//¶ÔÆäÏÈ½øÐÐ±ÕÔËËã modified in 20150515
+	Mat ImgFirstROI;
+	Mat ImgFirstROIOpen(ImgGray, FirstRect);
+	const Size2i CKernalSize(5, 5);
+	Mat StructurElement = getStructuringElement(MORPH_ELLIPSE, CKernalSize);
+	morphologyEx(ImgFirstROIOpen, ImgFirstROI, MORPH_CLOSE, StructurElement);
+
+	Rect ROIOutRect;  //ÂÖÀªµÄÍâ½Ó¾ØÐÎ	
+	int Threshold;
+
+	const int channels[1] = { 0 };
+	const int histSize[1] = { 256 };
+	float hranges[2] = { 0, 255 };
+	const float* ranges[1] = { hranges };
+	MatND hist;
+	calcHist(&ImgFirstROI, 1, channels, Mat(), hist, 1, histSize, ranges);
+
+	Threshold = GetIterativeBestThreshold(hist);
+	if (Threshold < 10) return defaultAllPoints;
+
+	Mat ImgBinary;
+	vector<vector<Point>> Contours;
+	threshold(ImgFirstROI, ImgBinary, Threshold, 255, THRESH_TOZERO);  //Ö÷ÒªÎªÁËÌáÈ¡¹âµ¶ÏßµÄÂÖÀª
+	//Ñ°ÕÒÂÖÀªfindContours
+	findContours(ImgBinary, Contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
+	//×Ô¶¨Òåº¯Êý °´ÂÖÀªÖÜ³¤´óÐ¡ÅÅÐò
+	std::sort(Contours.begin(), Contours.end(), LengthDown);
+	ROIOutRect = boundingRect(Contours.at(0));
+	//½«¸ÐÐËÈ¤ÇøÓòµÄ¾ØÐÎ¿òÔÚÕûÕÅÍ¼Æ¬ÖÐ±í´ï³öÀ´
+
+	PicROI.x = FirstRect.x + ROIOutRect.x;
+	PicROI.y = FirstRect.y + ROIOutRect.y;
+	PicROI.width = ROIOutRect.width;
+	PicROI.height = ROIOutRect.height;
+
+	//if (PicROI.x < 400)
+	//{
+	//	PicROI.width = PicROI.width - (400 - PicROI.x);
+	//	PicROI.x = 400;
+	//}
+	//if ((PicROI.x + PicROI.width) > 900)
+	//{
+	//	PicROI.width = 900 - PicROI.x;
+	//}
+	//if (PicROI.width < 1)
+	//{
+	//	return defaultAllPoints;
+	//}
+
+	//ÐÞÕý¸ÐÐËÈ¤ÇøÓò
+	//ÔÚ²»³¬³öÍ¼Æ¬±ß½çµÄÇé¿öÏÂ£¬½«¸ÐÐËÈ¤ÇøÓòÏòÉÏÏÂ·Ö±ðÀ©Õ¹10¸öÏñËØ
+	Rect ExtendRect = ExtendedROI(ImgGray, PicROI);
+	//²»ÓÃ½øÐÐ¸ÐÐËÈ¤ÇøÓòµÄ¸´ÖÆ
+	Mat LaserStripeROI(ImgGray, ExtendRect);
+	Mat LaserStripSmoothedUchar, LaserStripSmoothed;
+	GaussianBlur(LaserStripeROI, LaserStripSmoothedUchar, KernelSize, 0, 0);
+	LaserStripSmoothedUchar.convertTo(LaserStripSmoothed, CV_64FC1);  //ÀàÐÍ×ª»»
+
+	//imwrite(strImagePath, LaserStripSmoothed);
+	//imshow("", LaserStripSmoothedUchar);
+	//waitKey(0);
+
+	//È·¶¨¹âµ¶ÏßµÄ³õÊ¼ÖÐÐÄÎ»ÖÃ
+	Mat Index = OriginalCenter(LaserStripSmoothed);
+
+	if (Index.cols != LaserStripSmoothed.cols)  //²»ÏàµÈÔò²»½øÐÐ¼ÆËã modified in 20151030
+	{
+		LaserSensorIO.WriteLog("Error(11):IndexÓëLaserStripeSmoothedÁÐÊý²»µÈ!");
+		return defaultAllPoints;
+	}
+
+	//¼ÆËã¹âµ¶ÏßµÄ±ß½çãÐÖµ£¬È·¶¨¹âµ¶ÏßµÄ¿í¶È
+	Mat EdgeThresholdValue = DetermineEdgeValue(LaserStripSmoothed, Index);
+
+	if (EdgeThresholdValue.cols != LaserStripSmoothed.cols) /////// ²»ÏàµÈÔò²»½øÐÐ¼ÆËã modified in 20151030
+	{
+		LaserSensorIO.WriteLog("Error(11):EdgeThresholdValueÓëLaserStripeSmoothedÁÐÊý²»µÈ!");
+		return defaultAllPoints;
+	}
+
+	//ÀûÓÃ³õÊ¼ÖÐÐÄºÍ¹âµ¶ÏßµÄ±ß½çãÐÖµ¼ÆËã¸ÐÐËÈ¤ÇøÓòµÄ¹âµ¶ÏßÖÐÐÄ
+	Mat LaserROIStripeCenters = DetermineCenters(LaserStripSmoothed, Index, EdgeThresholdValue, ExtendRect);
+
+	for (int i = 0; i != LaserROIStripeCenters.rows;)
+	{
+		int num1 = 0, num2 = 0;
+		double avg1 = 0, avg2 = 0;
+		//ÏòÉÏ×î¶àÈ¡5¸öµã±È½ÏÒ»´Î
+		for (int rowNum = i - 1; rowNum > i - 6 && rowNum >= 0; rowNum--) //180517 Ô­°æ
+		{
+			avg1 += LaserROIStripeCenters.at<double>(rowNum, 0);
+			num1++;
+		}
+		if (num1 != 0)
+		{
+			avg1 = avg1 / num1;
+			if (abs(LaserROIStripeCenters.at<double>(i, 0) - avg1) > 10) //180517 Ô­°æ
+			{
+				deleteRow(LaserROIStripeCenters, i);
+				continue;
+			}
+		}
+
+		//ÏòÏÂ×î¶àÈ¡5¸öµãÔÙ±È½ÏÒ»´Î
+		for (int rowNum = i + 1; rowNum < i + 6 && rowNum < LaserROIStripeCenters.rows; rowNum++) //180517 Ô­°æ
+		{
+			avg2 += LaserROIStripeCenters.at<double>(rowNum, 0);
+			num2++;
+		}
+		if (num2 != 0)
+		{
+			avg2 = avg2 / num2;
+			if (abs(LaserROIStripeCenters.at<double>(i, 0) - avg2) > 10) //180517 Ô­°æ
+			{
+				deleteRow(LaserROIStripeCenters, i);
+				continue;
+			}
+		}
+
+		i++;
+	}
+
+	//½«¸ÐÐËÈ¤ÇøÓòµÄ¹âµ¶ÖÐÐÄ´æ´¢ 
+	allPoints.push_back(LaserROIStripeCenters);
+
+	if (allPoints.empty())
+		return defaultAllPoints;
+
+	return allPoints;
+}
+
+Mat C3DLaserSensorFeatureExtraction::LaserSensorStudExtraction(Mat Img, int uplimit, int downlimint, int leftlimit, int rightlimit, int Threshold/* =150 */, int ArcLengthValue/* =50 */, Size2i KernelSize/* =Size */)  //·µ»ØÖùÃæÄâºÏËùÐèµÄµãÔÆÊý¾Ý
 {
     Mat defaultAllPoints(1, 2, CV_64FC1, cvScalar(-1));
 
@@ -3086,7 +3576,7 @@ Mat C3DLaserSensorFeatureExtraction::LaserSensorStudExtraction(Mat Img, int upli
 	//¶ÔÆäÏÈ½øÐÐ±ÕÔËËã modified in 20150515
 	Mat ImgFirstROI;
 	Mat ImgFirstROIOpen(ImgGray,FirstRect);
-	const Size CKernalSize(5, 5);
+	const Size2i CKernalSize(5, 5);
 	Mat StructurElement=getStructuringElement(MORPH_ELLIPSE,CKernalSize);
 	morphologyEx(ImgFirstROIOpen,ImgFirstROI,MORPH_CLOSE,StructurElement); 
 
@@ -3256,7 +3746,7 @@ vector<Mat>  C3DLaserSensorFeatureExtraction::StudFit(Mat FittingPoints, double 
 	}
 }
 
-vector<Mat>  C3DLaserSensorFeatureExtraction::StudFit2(vector<Mat> vecFittingPoints, Mat planePoint, double CircleMeanErrorThreshold/* =0.2*/, double CircleGrossErrorCoe/* =0.1 */, double CircleNormalErrorCoe/* =3 */)  //ÖùÃæ·µ»ØÖÐÐÄ×ø±êÖµ+·¨Ïß
+vector<Mat>  C3DLaserSensorFeatureExtraction::StudFit15(vector<Mat> &vecFittingPoints, Mat planePoint, double CircleMeanErrorThreshold/* =0.2*/, double CircleGrossErrorCoe/* =0.1 */, double CircleNormalErrorCoe/* =3 */)  //ÖùÃæ·µ»ØÖÐÐÄ×ø±êÖµ+·¨Ïß
 {
 	Mat defaultStudCenter(1, 3, CV_64FC1, Scalar(-1));
 	Mat defaultStudAxes(1, 3, CV_64FC1, Scalar(-1));
@@ -3273,70 +3763,199 @@ vector<Mat>  C3DLaserSensorFeatureExtraction::StudFit2(vector<Mat> vecFittingPoi
 	}
 
 	Mat FittingPoints;
-	for (int i = 0; i != vecFittingPoints.size(); i++)
+	vector<bool> ChoosenGroup;
+	for (int i = 0; i != vecFittingPoints.size(); ++i)
 	{
-		if (vecFittingPoints[i].rows >= maxRows * 2/3)
+		if (vecFittingPoints[i].rows >= maxRows * 2.0 / 3.0)
 		{
 			FittingPoints.push_back(vecFittingPoints[i]);
+			ChoosenGroup.push_back(true);
+		}
+		else
+		{
+			ChoosenGroup.push_back(false);
 		}
 	}
 
 	if (FittingPoints.empty())
 		return studFeature;
 
-	string strStudPointsPath = "studPoints.txt";
-	LaserSensorIO.WriteRowFirstAPP(strStudPointsPath, FittingPoints);
+	//if (FittingPoints2.empty())
+	//	return studFeature;
 
-    Point3d axes = calcPCA(FittingPoints);
-	studFeature[1] = Mat(axes).t();  
+	Point3d axes = calcPCA(FittingPoints);
+	//axes.x = axes2.x;
+	//axes.y = axes1.y;
+	//axes.z = axes1.z;	
 
 	//ÖáÏß·½ÏòÍ¶Ó°
 	Mat axesMat = Mat(axes);  //½«Point3f×ª»»ÎªMatÀàÐÍ£¬·½±ã×ªÖÃÒÔ¼°Ê¹ÓÃÒÑÓÐº¯Êý£¬axesMatÎª3*1
+	normalize(axesMat, axesMat);
+
+	Mat vecXYRoted;
+	Mat vecProjectedPoints;
+	Mat FittingPoints2;
+	for (int i = 0; i != vecFittingPoints.size(); i++)
+	{
+		if (vecFittingPoints[i].rows < maxRows * 2.0 / 3.0)
+		{
+			continue;
+		}
+		Mat dataAdjust2(vecFittingPoints[i].rows, vecFittingPoints[i].cols, CV_64FC1);
+		Mat meanPoint(1, vecFittingPoints[i].cols, CV_64FC1, cvScalar(0));
+		//ÇóÈ¡Æ½¾ùÖµ
+		for (int j = 0; j != vecFittingPoints[i].cols; j++)
+		{
+			meanPoint.at<double>(0, j) = cv::mean(vecFittingPoints[i].col(j)).val[0];
+		}
+		for (int j = 0; j != dataAdjust2.rows; j++)
+		{
+			dataAdjust2.row(j) = vecFittingPoints[i].row(j) - meanPoint;
+		}
+		vecProjectedPoints = vecFittingPoints[i] - dataAdjust2 * axesMat * axesMat.t();
+		RotToZInfo rotInfo2 = RotToZ(vecProjectedPoints, axesMat);
+		vecXYRoted = rotInfo2.XYRoted;
+		vector<PTS> points;
+		double cen_z = vecXYRoted.at<double>(0, 2);
+		for (int j = 0; j != vecXYRoted.rows; j++)
+		{
+			PTS pt(vecXYRoted.at<double>(j, 0), vecXYRoted.at<double>(j, 1));
+			points.push_back(pt);
+		}
+		double cen_x = 0;
+		double cen_y = -3;
+		double cen_r = -1;
+		CircleFitSolver *cfs = new CircleFitSolver();
+		if (cfs->circleFitL1(points, cen_x, cen_y, cen_r))
+		{
+			//if ((cen_r > 3.65) && (cen_r < 4.5))
+			{
+				Mat rot2Z_cen(1, 3, CV_64FC1, Scalar(-1));
+				rot2Z_cen.at<double>(0, 0) = cen_x;
+				rot2Z_cen.at<double>(0, 1) = cen_y;
+				rot2Z_cen.at<double>(0, 2) = cen_z;
+				Mat temp = (rotInfo2.R.inv()*(rot2Z_cen.t())).t();
+				FittingPoints2.push_back(temp);
+			}
+		}
+	}
+
+	bool cycleFlag = true;
+	Point3d axes2;
+	Mat NewFittingPoints2;
+	NewFittingPoints2.resize(0);
+	while ((FittingPoints2.rows != NewFittingPoints2.rows) && (FittingPoints2.rows > 2))
+		//while (cycleFlag)
+	{
+		axes2 = calcPCA(FittingPoints2);
+		cycleFlag = false;
+		NewFittingPoints2 = FittingPoints2;
+		Point3d Point1, Point2;
+		Point1.x = cv::mean(NewFittingPoints2.col(0)).val[0];
+		Point1.y = cv::mean(NewFittingPoints2.col(1)).val[0];
+		Point1.z = cv::mean(NewFittingPoints2.col(2)).val[0];
+		Point2.x = Point1.x + 1;
+		Point2.y = axes2.y / axes2.x + Point1.y;
+		Point2.z = axes2.z / axes2.x + Point1.z;
+		vector<double> DistanceOfPointToLine;
+		double ab = sqrt(pow((Point2.x - Point1.x), 2.0) + pow((Point2.y - Point1.y), 2.0) + pow((Point2.z - Point1.z), 2.0));
+		double DisVar = 0;
+		//double DisMax = 0;
+		double DisMax2 = 0;
+		for (int cnt = 0; cnt != NewFittingPoints2.rows; cnt++)
+		{
+			double as = sqrt(pow((Point1.x - NewFittingPoints2.at<double>(cnt, 0)), 2.0) + pow((Point1.y - NewFittingPoints2.at<double>(cnt, 1)), 2.0) + pow((Point1.z - NewFittingPoints2.at<double>(cnt, 2)), 2.0));
+			double bs = sqrt(pow((NewFittingPoints2.at<double>(cnt, 0) - Point2.x), 2.0) + pow((NewFittingPoints2.at<double>(cnt, 1) - Point2.y), 2.0) + pow((NewFittingPoints2.at<double>(cnt, 2) - Point2.z), 2.0));
+			double cos_A = (pow(as, 2.0) + pow(ab, 2.0) - pow(bs, 2.0)) / (2 * ab*as);
+			double sin_A = sqrt(1 - pow(cos_A, 2.0));
+			DistanceOfPointToLine.push_back(as * sin_A);
+			//if ((similarVec[cnt] != cnt) && (DisMax < as * sin_A))
+			//{
+			//	DisMax = as * sin_A;
+			//	MaxIndex = cnt;
+			//}
+			if (DisMax2 < as * sin_A)
+			{
+				DisMax2 = as * sin_A;
+			}
+			DisVar += pow(DistanceOfPointToLine[cnt], 2.0);
+		}
+		DisVar /= (2 * DistanceOfPointToLine.size() - 4);
+		double DisStand = sqrt(DisVar);
+		FittingPoints2.resize(0);
+		if (((DisMax2>0.5) && (DisMax2 >(2 * DisStand))) || (DisMax2 >(2.5 * DisStand)))
+			//if (DisMax2 >(2 * DisStand))
+		{
+			for (int i = 0; i != DistanceOfPointToLine.size(); ++i)
+			{
+				if (DistanceOfPointToLine[i] < DisMax2)
+				{
+					FittingPoints2.push_back(NewFittingPoints2.row(i));
+				}
+				else
+				{
+					int index = 0;
+					for (int j = 0; j != ChoosenGroup.size(); ++j)
+					{
+						if (ChoosenGroup[j])
+						{
+							++index;
+							if (index == (i + 1))
+							{
+								ChoosenGroup[j] = false;
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			for (int i = 0; i != DistanceOfPointToLine.size(); ++i)
+			{
+				{
+					FittingPoints2.push_back(NewFittingPoints2.row(i));
+				}
+			}
+			break;
+		}
+	}
+	axes = calcPCA(FittingPoints2);
+
+	//ÖáÏß·½ÏòÍ¶Ó°
+	axesMat = Mat(axes);  //½«Point3f×ª»»ÎªMatÀàÐÍ£¬·½±ã×ªÖÃÒÔ¼°Ê¹ÓÃÒÑÓÐº¯Êý£¬axesMatÎª3*1
+	normalize(axesMat, axesMat);
+	studFeature[1] = axesMat.t();
+
+	//FittingPoints.resize(0);
+	//for (int i = 0; i != vecFittingPoints.size(); i++)
+	//{
+	//	if (ChoosenGroup[i])
+	//	{
+	//		FittingPoints.push_back(vecFittingPoints[i]);
+	//	}
+	//}
+
+	//string strStudPointsPath = "studPoints.txt";
+	//LaserSensorIO.WriteRowFirstAPP(strStudPointsPath, FittingPoints);
+
 	Mat dataAdjust(FittingPoints.rows, FittingPoints.cols, CV_64FC1);
 	for (int cnt = 0; cnt != FittingPoints.rows; cnt++)
 		dataAdjust.row(cnt) = FittingPoints.row(cnt) - planePoint;
-    Mat projectedPoints = FittingPoints - dataAdjust * axesMat * axesMat.t();
-						string strResultPath111 = "pro.txt";
-				LaserSensorIO.WriteRowFirstAPP(strResultPath111, projectedPoints);
-    //Ðý×ªÖÁÓëXYÆ½ÃæÆ½ÐÐ
-    RotToZInfo rotInfo = RotToZ(projectedPoints, axesMat);
-
-	vector<Mat> vecXYRoted(vecFittingPoints.size());
-	vector<Mat> vecProjectedPoints(vecFittingPoints.size());
-	for (int i = 0; i != vecFittingPoints.size(); i++)
-	{
-		if (vecFittingPoints[i].empty())
-			continue;
-	    Mat dataAdjust2(vecFittingPoints[i].rows, vecFittingPoints[i].cols, CV_64FC1);
-	    for (int j = 0; j != dataAdjust2.rows; j++)
-		{
-		    dataAdjust2.row(j) = vecFittingPoints[i].row(j) - planePoint;
-		}
-		vecProjectedPoints[i] = vecFittingPoints[i] - dataAdjust2 * axesMat * axesMat.t();
-		RotToZInfo rotInfo2 = RotToZ(vecProjectedPoints[i], axesMat);
-		vecXYRoted[i] = rotInfo2.XYRoted;
-	}
+	Mat projectedPoints = FittingPoints - dataAdjust * axesMat * axesMat.t();
+	//Ðý×ªÖÁÓëXYÆ½ÃæÆ½ÐÐ
+	RotToZInfo rotInfo = RotToZ(projectedPoints, axesMat);
 
 	//¾àÀëÖ®ºÍ×îÐ¡·¨£¬180912
 	vector<PTS> points;
-	bool flag = false;
-	double cen_z = 0;
-	for (int i = 0; i != vecFittingPoints.size(); i++)
+	//bool flag = false;
+	double cen_z = rotInfo.XYRoted.at<double>(0, 2);
+
+	for (int j = 0; j != rotInfo.XYRoted.rows; j++)
 	{
-		if ((!flag) && (vecXYRoted[i].rows != 0))
-		{
-			cen_z = vecXYRoted[i].at<double>(0, 2);
-			flag = true;
-		}
-		for (int j = 0; j != vecXYRoted[i].rows; j++)
-		{
-			PTS pt(vecXYRoted[i].at<double>(j, 0), vecXYRoted[i].at<double>(j, 1));
-			points.push_back(pt);
-		}
-	}
-	if (!flag)
-	{
-		return studFeature;
+		PTS pt(rotInfo.XYRoted.at<double>(j, 0), rotInfo.XYRoted.at<double>(j, 1));
+		points.push_back(pt);
 	}
 
 	double cen_x = 0;
@@ -3353,16 +3972,917 @@ vector<Mat>  C3DLaserSensorFeatureExtraction::StudFit2(vector<Mat> vecFittingPoi
 
 		studCenter = rotInfo.R.inv()*(rot2Z_cen.t());
 	}
-	//**********************//
 
-	//HoughÔ²¼ì²âÈ¥³ýÒì³£µã£¬²¢ÄâºÏÔ²
-	//Mat studCenter = HoughCircle(vecFittingPoints, vecXYRoted, rotInfo.XYRoted, 2.5, 2.8, 0.02, 0.02, CircleMeanErrorThreshold, CircleGrossErrorCoe, CircleNormalErrorCoe); //180525 Ô­°æ
-	//Mat studCenter = HoughCircle2(vecFittingPoints, vecXYRoted, rotInfo.XYRoted, 4.5, 4.8, 0.02, 0.02, CircleMeanErrorThreshold, CircleGrossErrorCoe, CircleNormalErrorCoe);
-
-    if (studCenter.empty())
+	if (studCenter.empty())
 	{
 		return studFeature;
-	} 
+	}
+	else
+	{
+		studFeature[0] = studCenter.t();
+		return studFeature;
+	}
+}
+
+vector<Mat>  C3DLaserSensorFeatureExtraction::Reconstruction(Mat &FittingPoints, double &radius)
+{
+	//#define  MAX_POINT_NUM 20000
+	Mat defaultStudCenter(1, 3, CV_64FC1, Scalar(-1));
+	Mat defaultStudAxes(1, 3, CV_64FC1, Scalar(-1));
+	vector<Mat> studFeature(2);
+	studFeature[0] = defaultStudCenter;
+	studFeature[1] = defaultStudAxes;
+
+	////ÌÞ³ýÖ»ÓÐÒ»°ëµÄÔ²»¡¶Î
+	//int maxRows = 0;
+	//for (int i = 0; i != vecFittingPoints.size(); i++)
+	//{
+	//	if (vecFittingPoints[i].rows > maxRows)
+	//		maxRows = vecFittingPoints[i].rows;
+	//}
+
+	//Mat FittingPoints;
+	//for (int i = 0; i != vecFittingPoints.size(); ++i)
+	//{
+	//	if (vecFittingPoints[i].rows >= maxRows * 2.0 / 3.0)
+	//	{
+	//		FittingPoints.push_back(vecFittingPoints[i]);
+	//	}
+	//}
+
+	//if (FittingPoints.empty())
+	//	return studFeature;
+
+	int i = 0, j = 0;              //Ñ­»·ÓÃ±äÁ¿
+	int int_temp = FittingPoints.rows;           //ÓÃÓÚ´æ´¢´ýÄâºÏµÄµãÊý
+	int loop_times = 0, pp = 0;    //loop_timeµÈ¼ÛÓÚt£¬±íÊ¾µü´úÑ­»·´ÎÊý
+	double a = 1, b = 1, c = 1;
+	double x0 = 0, y0 = 0, z0 = 0;
+	double D = 0, s = 0, S = 0, dx = 0, dy = 0, dz = 0;
+	double R = 0;                               //°ë¾¶
+	double d_temp1 = 0, d_temp2 = 0, d_temp3 = 0;
+	//double B[MAX_POINT_NUM][7] = { 0 };
+	//double L[MAX_POINT_NUM] = { 0 };
+	//double worldVetex[MAX_POINT_NUM][3] = { 0 };  //ÓÃÓÚ´æ´¢µã×ø±ê
+	Mat B(int_temp, 7, CV_64FC1, Scalar(-1));
+	Mat L(int_temp, 1, CV_64FC1, Scalar(-1));
+
+	double mean_x = 0, mean_y = 0, mean_z = 0;
+	bool while_flag = 1;
+	CvMat* C = cvCreateMat(2, 7, CV_64FC1);
+	CvMat* W = cvCreateMat(2, 1, CV_64FC1);
+	CvMat* N = cvCreateMat(9, 9, CV_64FC1);
+	CvMat* N_inv = cvCreateMat(9, 9, CV_64FC1);
+	CvMat* UU = cvCreateMat(9, 1, CV_64FC1);
+	CvMat* para = cvCreateMat(9, 1, CV_64FC1);     //²ÎÊý¾ØÕó
+	//±äÁ¿³õÊ¼»¯
+	cvZero(C); cvZero(W); cvZero(N); cvZero(N_inv); cvZero(UU);
+	cvSetIdentity(para);
+
+	//Çó½âÖØÐÄ¡¢³õÊ¼»¯
+	for (i = 0; i<int_temp; i++)    //int_tempÎªµãÔÆ×ÜÊý
+	{
+		d_temp1 += FittingPoints.at<double>(i, 0);
+		d_temp2 += FittingPoints.at<double>(i, 1);
+		d_temp3 += FittingPoints.at<double>(i, 2);
+	}
+	mean_x = d_temp1 / int_temp; mean_y = d_temp2 / int_temp; mean_z = d_temp3 / int_temp;
+	x0 = mean_x; y0 = mean_y; z0 = mean_z;
+	R = 4.0;
+	//µü´úÑ­»·£¬×îÓÅ»¯¾ØÕópara
+	while (while_flag == true)       //¼´(max(abs(para(1:7)))>0.00001)               
+	{
+		//1. a¡¢b¡¢cµÄ·ûºÅÐÞÕý
+		if (a<0)
+		{
+			a = -a; b = -b; c = -c;
+		}
+		if (a == 0)
+		{
+			if (b<0)
+			{
+				b = -b; c = -c;
+			}
+			if (b == 0)
+			{
+				if (c<0)
+					c = -c;
+			}
+		}
+		s = sqrt(pow(a, 2) + pow(b, 2) + pow(c, 2)) + 0.0000001;       //·ÀÖ¹a b c Í¬Ê±Îª0
+		a = a / s + 0.0000001; b = b / s + 0.0000001; c = c / s + 0.0000001;
+		//2. ¼ÆËã¾ØÕóBºÍL
+		for (i = 0; i<int_temp; i++)                              //int_tempÎªµãÔÆ×ÜÊý
+		{
+			//Êý¾Ý¼ÆËã
+			D = a*(FittingPoints.at<double>(i, 0) - x0) + b*(FittingPoints.at<double>(i, 1) - y0) + c*(FittingPoints.at<double>(i, 2) - z0);       //D=a*(X(i)-x0)+b*(Y(i)-y0)+c*(Z(i)-z0);
+			dx = x0 + a*D - FittingPoints.at<double>(i, 0); dy = y0 + b*D - FittingPoints.at<double>(i, 1); dz = z0 + c*D - FittingPoints.at<double>(i, 2);//dx=x0+a*D-X(i);dy=y0+b*D-Y(i);dz=z0+c*D-Z(i);
+			S = sqrt(pow(dx, 2) + pow(dy, 2) + pow(dz, 2));                                           //S=sqrt(dx^2+dy^2+dz^2);
+			B.at<double>(i, 0) = (dx*(a*(FittingPoints.at<double>(i, 0) - x0) + D) + dy*b*(FittingPoints.at<double>(i, 0) - x0) + dz*c*(FittingPoints.at<double>(i, 0) - x0)) / S;   //b1
+			B.at<double>(i, 1) = (dx*a*(FittingPoints.at<double>(i, 1) - y0) + dy*(b*(FittingPoints.at<double>(i, 1) - y0) + D) + dz*c*(FittingPoints.at<double>(i, 1) - y0)) / S;
+			B.at<double>(i, 2) = (dx*a*(FittingPoints.at<double>(i, 2) - z0) + dy*b*(FittingPoints.at<double>(i, 2) - z0) + dz*(c*(FittingPoints.at<double>(i, 2) - z0) + D)) / S;
+			B.at<double>(i, 3) = (dx*(1 - pow(a, 2)) - dy*a*b - dz*a*c) / S;
+			B.at<double>(i, 4) = (-dx*a*b + dy*(1 - pow(b, 2)) - dz*b*c) / S;
+			B.at<double>(i, 5) = (-dx*a*c - dy*b*c + dz*(1 - pow(c, 2))) / S;
+			B.at<double>(i, 6) = -1;
+			//Êý¾Ý´æ´¢
+
+			//B=[B;b1 b2 b3 b4 b5 b6 b7]; ´Ë²½ÖèÒÑÕûºÏÖÁÉÏ10ÐÐµÄB[i][0-6]ÖÐ
+			L.at<double>(i, 0) = R - S;  //l=[R-S];
+			//L=[L;l];
+		}
+		//3. ¼ÆËã¾ØÕóC(2*7)ºÍW(2*1)
+		d_temp1 = 1 - pow(a, 2) - pow(b, 2) - pow(c, 2);
+
+		if (fabs(a) >= fabs(b) && fabs(a) >= fabs(c))
+		{
+			cvZero(C); cvZero(W);
+			cvmSet(C, 0, 0, 2 * a); cvmSet(C, 0, 1, 2 * b);
+			cvmSet(C, 0, 2, 2 * c); cvmSet(C, 1, 3, 1);
+			cvmSet(W, 0, 0, d_temp1); cvmSet(W, 1, 0, mean_x - x0);
+		}
+		if (fabs(b) >= fabs(a) && fabs(b) >= fabs(c))
+		{
+			cvZero(C); cvZero(W);
+			cvmSet(C, 0, 0, 2 * a); cvmSet(C, 0, 1, 2 * b);
+			cvmSet(C, 0, 2, 2 * c); cvmSet(C, 1, 4, 1);
+			cvmSet(W, 0, 0, d_temp1); cvmSet(W, 1, 0, mean_y - y0);
+		}
+		if (fabs(c) >= fabs(a) && fabs(c) >= fabs(b))
+		{
+			cvZero(C); cvZero(W);
+			cvmSet(C, 0, 0, 2 * a); cvmSet(C, 0, 1, 2 * b);
+			cvmSet(C, 0, 2, 2 * c); cvmSet(C, 1, 5, 1);
+			cvmSet(W, 0, 0, d_temp1); cvmSet(W, 1, 0, mean_z - z0);
+		}
+		//4. ¼ÆËãpara¾ØÕó
+		//Nbb=B'*B;U=B'*L;
+		//N=[Nbb C';C zeros(2)];
+		//UU=[U;W];
+		//para=inv(N)*UU;
+		//4.1 ¼ÆËã¾ØÕóN
+		cvZero(N);        // N= |Nbb(7*7)  C'(7*2)|
+		//    |C  (2*7)  O(2*2) |
+		for (i = 0; i<7; i++)
+		{
+			for (j = 0; j<7; j++)
+			{
+				d_temp1 = 0;
+				for (pp = 0; pp<int_temp; pp++)
+				{
+					d_temp1 += B.at<double>(pp, i) * B.at<double>(pp, j);
+				}
+				cvmSet(N, i, j, d_temp1);
+			}
+		}
+		for (i = 0; i<2; i++)
+			for (j = 0; j<7; j++)
+				cvmSet(N, i + 7, j, cvmGet(C, i, j));
+		for (i = 0; i<2; i++)
+			for (j = 0; j<7; j++)
+				cvmSet(N, j, i + 7, cvmGet(C, i, j));
+		//4.2 ¼ÆËã¾ØÕóUU
+		for (i = 0; i<7; i++)
+		{
+			d_temp1 = 0;
+			for (pp = 0; pp<int_temp; pp++)
+			{
+				d_temp1 += B.at<double>(pp, i) * L.at<double>(pp, 0);
+			}
+			cvmSet(UU, i, 0, d_temp1);
+		}
+		for (i = 0; i<2; i++)
+			cvmSet(UU, i + 7, 0, cvmGet(W, i, 0));
+		//4.2 ¼ÆËã¾ØÕópara
+		cvInvert(N, N_inv);           //para=inv(N)*UU;
+		cvmMul(N_inv, UU, para);
+		a = a + cvmGet(para, 0, 0);      //a=a+para(1);b=b+para(2);c=c+para(3);
+		b = b + cvmGet(para, 1, 0);
+		c = c + cvmGet(para, 2, 0);
+		x0 = x0 + cvmGet(para, 3, 0);   //x0=x0+para(4);y0=y0+para(5);z0=z0+para(6);
+		y0 = y0 + cvmGet(para, 4, 0);
+		z0 = z0 + cvmGet(para, 5, 0);
+		R = R + cvmGet(para, 6, 0);
+		loop_times = loop_times + 1;     //t=t+1
+		//5. ¼ÆËãwhile±êÖ¾while_flagÎª0»òÕß1£ºÈômax(abs(para(1:7)))>0.00001£¬Ôòwhile_flag=1£»·ñÔò£¬Îª0.
+		d_temp1 = cvmGet(para, 0, 0);
+		for (i = 1; i<7; i++)
+		{
+			if (fabs(d_temp1)<fabs(cvmGet(para, i, 0)))
+				d_temp1 = cvmGet(para, i, 0);
+		}
+		if (fabs(d_temp1)>0.00001)
+			while_flag = 1;
+		else
+			while_flag = 0;
+	}
+	cout << "µü´úÑ­»·´ÎÊýÎª:" << loop_times << endl;
+	cout << "ÄâºÏ°ë¾¶Îª:" << R << endl;
+	cout << "Ô²ÖùÖáÏß·½ÏòÏòÁ¿Îª:[" << a << ", " << b << ", " << c << "]" << endl;
+	cout << "Ô²ÖùÖáÏßÆðÊ¼µã×ø±êÎª:[" << x0 << ", " << y0 << ", " << z0 << "]" << endl;
+	studFeature[0].at<double>(0, 0) = x0;
+	studFeature[0].at<double>(0, 1) = y0;
+	studFeature[0].at<double>(0, 2) = z0;
+	studFeature[1].at<double>(0, 0) = a;
+	studFeature[1].at<double>(0, 1) = b;
+	studFeature[1].at<double>(0, 2) = c;
+	radius = R;
+	//studAxes.at<double>(0, 0) = a;
+	//studAxes.at<double>(0, 1) = b;
+	//studAxes.at<double>(0, 2) = c;
+	return studFeature;
+}
+
+vector<Mat>  C3DLaserSensorFeatureExtraction::StudFit14(vector<Mat> &vecFittingPoints, Mat planePoint, double CircleMeanErrorThreshold/* =0.2*/, double CircleGrossErrorCoe/* =0.1 */, double CircleNormalErrorCoe/* =3 */)
+{
+	Mat defaultStudCenter(1, 3, CV_64FC1, Scalar(-1));
+	Mat defaultStudAxes(1, 3, CV_64FC1, Scalar(-1));
+	vector<Mat> studFeature(2);
+	studFeature[0] = defaultStudCenter;
+	studFeature[1] = defaultStudAxes;
+
+	//ÌÞ³ýÖ»ÓÐÒ»°ëµÄÔ²»¡¶Î
+	int maxRows = 0;
+	for (int i = 0; i != vecFittingPoints.size(); i++)
+	{
+		if (vecFittingPoints[i].rows > maxRows)
+			maxRows = vecFittingPoints[i].rows;
+	}
+
+	Mat FittingPoints;
+	Mat FittingPoints3;
+	vector<bool> ChoosenGroup;
+	for (int i = 0; i != vecFittingPoints.size(); ++i)
+	{
+		if (vecFittingPoints[i].rows >= maxRows * 2.0 / 3.0)
+		{
+			FittingPoints.push_back(vecFittingPoints[i]);
+		}
+		FittingPoints3.push_back(vecFittingPoints[i]);
+		ChoosenGroup.push_back(true);
+	}
+
+	if (FittingPoints.empty())
+		return studFeature;
+
+	vector<Mat> TempStudFeature(2);
+	double radius = 0;
+	TempStudFeature = Reconstruction(FittingPoints, radius);
+	Mat axesMat = TempStudFeature[1];
+	normalize(axesMat, axesMat);
+	studFeature[1] = axesMat;
+
+	//Point3d axes = calcPCA(FittingPoints);
+	//Mat axesMat = Mat(axes);  //½«Point3f×ª»»ÎªMatÀàÐÍ£¬·½±ã×ªÖÃÒÔ¼°Ê¹ÓÃÒÑÓÐº¯Êý£¬axesMatÎª3*1
+	//normalize(axesMat, axesMat);
+
+	//Mat vecXYRoted;
+	//Mat vecProjectedPoints;
+	//Mat FittingPoints2;
+	//for (int i = 0; i != vecFittingPoints.size(); i++)
+	//{
+	//	//if (vecFittingPoints[i].rows < maxRows * 1.0 / 2.0)
+	//	//{
+	//	//	continue;
+	//	//}
+	//	Mat dataAdjust2(vecFittingPoints[i].rows, vecFittingPoints[i].cols, CV_64FC1);
+	//	Mat meanPoint(1, vecFittingPoints[i].cols, CV_64FC1, cvScalar(0));
+	//	//ÇóÈ¡Æ½¾ùÖµ
+	//	for (int j = 0; j != vecFittingPoints[i].cols; j++)
+	//	{
+	//		meanPoint.at<double>(0, j) = cv::mean(vecFittingPoints[i].col(j)).val[0];
+	//	}
+	//	for (int j = 0; j != dataAdjust2.rows; j++)
+	//	{
+	//		dataAdjust2.row(j) = vecFittingPoints[i].row(j) - meanPoint;
+	//	}
+	//	vecProjectedPoints = vecFittingPoints[i] - dataAdjust2 * axesMat * axesMat.t();
+	//	RotToZInfo rotInfo2 = RotToZ(vecProjectedPoints, axesMat);
+	//	vecXYRoted = rotInfo2.XYRoted;
+	//	vector<PTS> points;
+	//	double cen_z = vecXYRoted.at<double>(0, 2);
+	//	for (int j = 0; j != vecXYRoted.rows; j++)
+	//	{
+	//		PTS pt(vecXYRoted.at<double>(j, 0), vecXYRoted.at<double>(j, 1));
+	//		points.push_back(pt);
+	//	}
+	//	double cen_x = 0;
+	//	double cen_y = -3;
+	//	double cen_r = -1;
+	//	CircleFitSolver *cfs = new CircleFitSolver();
+	//	if (cfs->circleFitL1(points, cen_x, cen_y, cen_r))
+	//	{
+	//		{
+	//			Mat rot2Z_cen(1, 3, CV_64FC1, Scalar(-1));
+	//			rot2Z_cen.at<double>(0, 0) = cen_x;
+	//			rot2Z_cen.at<double>(0, 1) = cen_y;
+	//			rot2Z_cen.at<double>(0, 2) = cen_z;
+	//			Mat temp = (rotInfo2.R.inv()*(rot2Z_cen.t())).t();
+	//			FittingPoints2.push_back(temp);
+	//		}
+	//	}
+	//}
+
+	//bool cycleFlag = true;
+	//double mindif = 10;
+	//double radius = 0;
+	//vector<Mat> TempStudFeature(2);
+	//TempStudFeature = Reconstruction(FittingPoints3, radius);
+	//Mat axesresult = TempStudFeature[1];
+	//Mat axesMat = axesresult;
+	//while (cycleFlag)
+	//{
+	//	double maxdifRadius = 0;
+	//	int index = 0;
+	//	for (int i = 0; i != vecFittingPoints.size(); i++)
+	//	{
+	//		if (ChoosenGroup[i])
+	//		{
+	//			Mat dataAdjust2(vecFittingPoints[i].rows, vecFittingPoints[i].cols, CV_64FC1);
+	//			for (int j = 0; j != dataAdjust2.rows; j++)
+	//			{
+	//				dataAdjust2.row(j) = vecFittingPoints[i].row(j) - TempStudFeature[0];
+	//			}
+	//			Mat vecProjectedPoints = vecFittingPoints[i] - dataAdjust2 * axesMat.t() * axesMat;
+	//			double difRadius = 0;
+	//			for (int j = 0; j != vecProjectedPoints.rows; j++)
+	//			{
+	//				difRadius += sqrt(pow(vecProjectedPoints.at<double>(0, 0) - TempStudFeature[0].at<double>(0, 0), 2.0)
+	//								+ pow(vecProjectedPoints.at<double>(0, 1) - TempStudFeature[0].at<double>(0, 1), 2.0)
+	//								+ pow(vecProjectedPoints.at<double>(0, 2) - TempStudFeature[0].at<double>(0, 2), 2.0)) - radius;
+	//			}
+	//			difRadius /= vecProjectedPoints.rows;
+	//			if (difRadius > maxdifRadius)
+	//			{
+	//				maxdifRadius = difRadius;
+	//				index = i;
+	//			}
+	//		}
+	//	}
+	//	ChoosenGroup[index] = false;
+	//	FittingPoints3.resize(0);
+	//	for (int i = 0; i != vecFittingPoints.size(); i++)
+	//	{
+	//		if (ChoosenGroup[i])
+	//		{
+	//			FittingPoints3.push_back(vecFittingPoints[i]);
+	//		}
+	//	}
+	//	if (FittingPoints3.rows < 1000)
+	//	{
+	//		break;
+	//	}
+	//	TempStudFeature = Reconstruction(FittingPoints3, radius);
+	//	if (radius < 3.7)
+	//	{
+	//		break;
+	//	}
+	//	Mat axesnew = TempStudFeature[1];
+	//	double dif = sqrt(pow((abs(axesnew.at<double>(0, 0)) - abs(axesMat.at<double>(0, 0))), 2.0) + pow((abs(axesnew.at<double>(0, 1)) - abs(axesMat.at<double>(0, 1))), 2.0) + pow((abs(axesnew.at<double>(0, 2)) - abs(axesMat.at<double>(0, 2))), 2.0));
+	//	double threshold = sqrt(pow(0.005, 2.0) * 3);
+	//	if (dif < threshold)
+	//	{
+	//		cycleFlag = false;
+	//		axesresult = axesMat;
+	//	}
+	//	else
+	//	{
+	//		if (dif < mindif)
+	//		{
+	//			mindif = dif;
+	//			axesresult = axesMat;
+	//		}
+	//	}
+	//	axesMat = axesnew;
+	//}
+	//axesMat = axesresult;
+
+	//////ÖáÏß·½ÏòÍ¶Ó°
+	////axesMat = Mat(axes);  //½«Point3f×ª»»ÎªMatÀàÐÍ£¬·½±ã×ªÖÃÒÔ¼°Ê¹ÓÃÒÑÓÐº¯Êý£¬axesMatÎª3*1
+	//normalize(axesMat, axesMat);
+	//studFeature[1] = axesMat;
+
+	Mat dataAdjust(FittingPoints.rows, FittingPoints.cols, CV_64FC1);
+	for (int cnt = 0; cnt != FittingPoints.rows; cnt++)
+		dataAdjust.row(cnt) = FittingPoints.row(cnt) - planePoint;
+	Mat projectedPoints = FittingPoints - dataAdjust * axesMat.t() * axesMat;
+	//Ðý×ªÖÁÓëXYÆ½ÃæÆ½ÐÐ
+	RotToZInfo rotInfo = RotToZ(projectedPoints, axesMat.t());
+
+	Mat rot2Z_cen = HoughCircle2(rotInfo.XYRoted, 4.8, 5.0, 0.02, 0.02, CircleMeanErrorThreshold, CircleGrossErrorCoe, CircleNormalErrorCoe);
+	Mat studCenter = rotInfo.R.inv()*(rot2Z_cen.t());
+
+	////¾àÀëÖ®ºÍ×îÐ¡·¨£¬180912
+	//vector<PTS> points;
+	////bool flag = false;
+	//double cen_z = rotInfo.XYRoted.at<double>(0, 2);
+
+	//for (int j = 0; j != rotInfo.XYRoted.rows; j++)
+	//{
+	//	PTS pt(rotInfo.XYRoted.at<double>(j, 0), rotInfo.XYRoted.at<double>(j, 1));
+	//	points.push_back(pt);
+	//}
+
+	//double cen_x = 0;
+	//double cen_y = -3;
+	//double cen_r = -1;
+	//Mat studCenter;
+	//CircleFitSolver *cfs = new CircleFitSolver();
+	//if (cfs->circleFitL1(points, cen_x, cen_y, cen_r))
+	//{
+	//	Mat rot2Z_cen(1, 3, CV_64FC1, Scalar(-1));
+	//	rot2Z_cen.at<double>(0, 0) = cen_x;
+	//	rot2Z_cen.at<double>(0, 1) = cen_y;
+	//	rot2Z_cen.at<double>(0, 2) = cen_z;
+
+	//	studCenter = rotInfo.R.inv()*(rot2Z_cen.t());
+	//}
+
+	if (studCenter.empty())
+	{
+		return studFeature;
+	}
+	else
+	{
+		studFeature[0] = studCenter.t();
+		return studFeature;
+	}
+
+}
+
+void C3DLaserSensorFeatureExtraction::OpitmizePoints(Mat &FittingPoints2, vector<bool> &ChoosenGroup, vector<int> similarVec)
+{
+	Mat TempFittingPoints2;
+	for (int i = 0; i != FittingPoints2.rows; ++i)
+	{
+		if (similarVec[i] != i)
+		{
+			Mat cen = (FittingPoints2.row(i) + FittingPoints2.row(similarVec[i])) / 2.0;
+			TempFittingPoints2.push_back(cen);
+			//vecFittingPoints[i].push_back(vecFittingPoints[similarVec[i]]);
+			ChoosenGroup[similarVec[i]] = false;
+			++i;
+		}
+		else
+		{
+			TempFittingPoints2.push_back(FittingPoints2.row(i));
+		}
+	}
+	FittingPoints2 = TempFittingPoints2;
+
+	bool cycleFlag = true;
+	Point3d axes2;
+	Mat NewFittingPoints2;
+	NewFittingPoints2.resize(0);
+	while ((FittingPoints2.rows != NewFittingPoints2.rows) && (FittingPoints2.rows > 2))
+		//while (cycleFlag)
+	{
+		axes2 = calcPCA(FittingPoints2);
+		cycleFlag = false;
+		NewFittingPoints2 = FittingPoints2;
+		Point3d Point1, Point2;
+		Point1.x = cv::mean(NewFittingPoints2.col(0)).val[0];
+		Point1.y = cv::mean(NewFittingPoints2.col(1)).val[0];
+		Point1.z = cv::mean(NewFittingPoints2.col(2)).val[0];
+		Point2.x = Point1.x + 1;
+		Point2.y = axes2.y / axes2.x + Point1.y;
+		Point2.z = axes2.z / axes2.x + Point1.z;
+		vector<double> DistanceOfPointToLine;
+		double ab = sqrt(pow((Point2.x - Point1.x), 2.0) + pow((Point2.y - Point1.y), 2.0) + pow((Point2.z - Point1.z), 2.0));
+		double DisVar = 0;
+		//double DisMax = 0;
+		double DisMax2 = 0;
+		for (int cnt = 0; cnt != NewFittingPoints2.rows; cnt++)
+		{
+			double as = sqrt(pow((Point1.x - NewFittingPoints2.at<double>(cnt, 0)), 2.0) + pow((Point1.y - NewFittingPoints2.at<double>(cnt, 1)), 2.0) + pow((Point1.z - NewFittingPoints2.at<double>(cnt, 2)), 2.0));
+			double bs = sqrt(pow((NewFittingPoints2.at<double>(cnt, 0) - Point2.x), 2.0) + pow((NewFittingPoints2.at<double>(cnt, 1) - Point2.y), 2.0) + pow((NewFittingPoints2.at<double>(cnt, 2) - Point2.z), 2.0));
+			double cos_A = (pow(as, 2.0) + pow(ab, 2.0) - pow(bs, 2.0)) / (2 * ab*as);
+			double sin_A = sqrt(1 - pow(cos_A, 2.0));
+			DistanceOfPointToLine.push_back(as * sin_A);
+			//if ((similarVec[cnt] != cnt) && (DisMax < as * sin_A))
+			//{
+			//	DisMax = as * sin_A;
+			//	MaxIndex = cnt;
+			//}
+			if (DisMax2 < as * sin_A)
+			{
+				DisMax2 = as * sin_A;
+			}
+			DisVar += pow(DistanceOfPointToLine[cnt], 2.0);
+		}
+		DisVar /= (2 * DistanceOfPointToLine.size() - 4);
+		double DisStand = sqrt(DisVar);
+		FittingPoints2.resize(0);
+		if (((DisMax2>0.5) && (DisMax2 >(2 * DisStand))) || (DisMax2 >(2.5 * DisStand)))
+			//if (DisMax2 >(2 * DisStand))
+		{
+			for (int i = 0; i != DistanceOfPointToLine.size(); ++i)
+			{
+				if (DistanceOfPointToLine[i] < DisMax2)
+				{
+					FittingPoints2.push_back(NewFittingPoints2.row(i));
+				}
+				else
+				{
+					//if (DisMax2 == DisMax)
+					//{
+					//	int index = similarVec[i];
+					//	similarVec[index] = index;
+					//	similarVec[i] = i;
+					//}
+					//int tempSize = similarVec.size() - 1;
+					//for (int j = i; j < tempSize; ++j)
+					//{
+					//	similarVec[j] = similarVec[j + 1] - 1;
+					//}
+					//similarVec.resize(tempSize);
+					int index = 0;
+					for (int j = 0; j != ChoosenGroup.size(); ++j)
+					{
+						if (ChoosenGroup[j])
+						{
+							++index;
+							if (index == (i + 1))
+							{
+								ChoosenGroup[j] = false;
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+		//else if ((DisMax == DisMax2) && (DisMax - DistanceOfPointToLine[similarVec[MaxIndex]] > 0.1))
+		//{
+		//	for (int i = 0; i != DistanceOfPointToLine.size(); ++i)
+		//	{
+		//		//if (DistanceOfPointToLine[i] < (2 * DisStand))
+		//		if (DistanceOfPointToLine[i] != DisMax)
+		//		{
+		//			FittingPoints2.push_back(NewFittingPoints2.row(i));
+		//		}
+		//		else
+		//		{
+		//			int index = similarVec[i];
+		//			similarVec[index] = index;
+		//			similarVec[i] = i;
+		//			int tempSize = similarVec.size() - 1;
+		//			for (int j = i; j < tempSize; ++j)
+		//			{
+		//				similarVec[j] = similarVec[j + 1] - 1;
+		//			}
+		//			similarVec.resize(tempSize);
+		//			index = 0;
+		//			for (int j = 0; j != ChoosenGroup.size(); ++j)
+		//			{
+		//				if (ChoosenGroup[j])
+		//				{
+		//					++index;
+		//					if (index == (i + 1))
+		//					{
+		//						ChoosenGroup[j] = false;
+		//						break;
+		//					}
+		//				}
+		//			}
+		//		}
+		//	}
+		//}
+		else
+		{
+			for (int i = 0; i != DistanceOfPointToLine.size(); ++i)
+			{
+				//if (similarVec[i] != i)
+				//{
+				//	Mat cen = (NewFittingPoints2.row(i) + NewFittingPoints2.row(similarVec[i])) / 2.0;
+				//	FittingPoints2.push_back(cen);
+				//	++i;
+				//}
+				//else
+				{
+					FittingPoints2.push_back(NewFittingPoints2.row(i));
+				}
+			}
+			break;
+		}
+		//for (int i = 0; i != similarVec.size(); ++i)
+		//{
+		//	if (similarVec[i] != i)
+		//	{
+		//		cycleFlag = true;
+		//		break;
+		//	}
+		//}
+	}
+}
+
+vector<Mat>  C3DLaserSensorFeatureExtraction::StudFit2(vector<Mat> &vecFittingPoints, Mat planePoint, Mat planeVector, vector<int> similarVec, double CircleMeanErrorThreshold/* =0.2*/, double CircleGrossErrorCoe/* =0.1 */, double CircleNormalErrorCoe/* =3 */)  //ÖùÃæ·µ»ØÖÐÐÄ×ø±êÖµ+·¨Ïß
+{
+	Mat defaultStudCenter(1, 3, CV_64FC1, Scalar(-1));
+	Mat defaultStudAxes(1, 3, CV_64FC1, Scalar(-1));
+	vector<Mat> studFeature(2);
+	studFeature[0] = defaultStudCenter;
+	studFeature[1] = defaultStudAxes;
+
+	//ÌÞ³ýÖ»ÓÐÒ»°ëµÄÔ²»¡¶Î
+	int maxRows = 0;
+	for (int i = 0; i != vecFittingPoints.size(); i++)
+	{
+		if (vecFittingPoints[i].rows > maxRows)
+			maxRows = vecFittingPoints[i].rows;
+	}
+
+	Mat FittingPoints;
+	vector<bool> ChoosenGroup;
+	for (int i = 0; i != vecFittingPoints.size(); ++i)
+	{
+		if (vecFittingPoints[i].rows >= maxRows * 2.0 / 3.0)
+		{
+			FittingPoints.push_back(vecFittingPoints[i]);
+			ChoosenGroup.push_back(true);
+		}
+		else
+		{
+			ChoosenGroup.push_back(false);
+			if (similarVec[i] != i)
+			{
+				int index = similarVec[i];
+				similarVec[index] = index;
+				similarVec[i] = i;
+			}
+		}
+	}
+
+	if (FittingPoints.empty())
+		return studFeature;
+
+	//if (FittingPoints2.empty())
+	//	return studFeature;
+
+	Point3d axes = calcPCA(FittingPoints);
+	//Point3d axes1 = axes;
+	//axes.x = axes2.x;
+	//axes.y = axes1.y;
+	//axes.z = axes1.z;	
+
+	//ÖáÏß·½ÏòÍ¶Ó°
+	Mat axesMat = Mat(axes);  //½«Point3f×ª»»ÎªMatÀàÐÍ£¬·½±ã×ªÖÃÒÔ¼°Ê¹ÓÃÒÑÓÐº¯Êý£¬axesMatÎª3*1
+	normalize(axesMat, axesMat);
+
+	//string strStudPointsPath = "studPoints.txt";
+	//LaserSensorIO.WriteRowFirstAPP(strStudPointsPath, FittingPoints);
+
+	//Mat dataAdjust(FittingPoints.rows, FittingPoints.cols, CV_64FC1);
+	//for (int cnt = 0; cnt != FittingPoints.rows; cnt++)
+	//	dataAdjust.row(cnt) = FittingPoints.row(cnt) - planePoint;
+	//Mat projectedPoints = FittingPoints - dataAdjust * axesMat * axesMat.t();
+
+	//string strResultPath111 = "pro.txt";
+	//LaserSensorIO.WriteRowFirstAPP(strResultPath111, projectedPoints);
+	//Ðý×ªÖÁÓëXYÆ½ÃæÆ½ÐÐ
+	//RotToZInfo rotInfo = RotToZ(projectedPoints, axesMat);
+
+	Mat FittingPoints2;
+	for (int i = 0; i != vecFittingPoints.size(); ++i)
+	{
+		if (vecFittingPoints[i].rows >= maxRows * 2.0 / 3.0)
+		{
+			int num_closest = vecFittingPoints[i].rows / 2;
+			int num_dismin = 0;
+			double closest = abs(vecFittingPoints[i].at<double>(0, 2) - vecFittingPoints[i].at<double>(vecFittingPoints[i].rows - 1, 2));
+			double dis_min = vecFittingPoints[i].at<double>(0, 2);
+			if (vecFittingPoints[i].at<double>(0, 2) > vecFittingPoints[i].at<double>(vecFittingPoints[i].rows - 1, 2))
+			{
+				int num_pt = 0;
+				for (int j = vecFittingPoints[i].rows - 1; j != 0; --j)
+				{
+					if (dis_min > vecFittingPoints[i].at<double>(j, 2))
+					{
+						dis_min = vecFittingPoints[i].at<double>(j, 2);
+						num_dismin = j;
+					}
+				}
+				for (int j = 1; j != num_dismin; ++j)
+				{
+					if (closest > abs(vecFittingPoints[i].at<double>(j, 2) - vecFittingPoints[i].at<double>(vecFittingPoints[i].rows - 1, 2)))
+					{
+						closest = abs(vecFittingPoints[i].at<double>(j, 2) - vecFittingPoints[i].at<double>(vecFittingPoints[i].rows - 1, 2));
+						num_pt = j;
+					}
+				}
+				num_closest = (num_pt + vecFittingPoints[i].rows - 1) / 2;
+			}
+			else
+				if (vecFittingPoints[i].at<double>(0, 2) < vecFittingPoints[i].at<double>(vecFittingPoints[i].rows - 1, 2))
+				{
+					int num_pt = vecFittingPoints[i].rows - 1;
+					for (int j = 1; j != vecFittingPoints[i].rows; ++j)
+					{
+						if (dis_min > vecFittingPoints[i].at<double>(j, 2))
+						{
+							dis_min = vecFittingPoints[i].at<double>(j, 2);
+							num_dismin = j;
+						}
+					}
+					for (int j = vecFittingPoints[i].rows - 1; j != num_dismin; --j)
+					{
+						if (closest > abs(vecFittingPoints[i].at<double>(j, 2) - vecFittingPoints[i].at<double>(0, 2)))
+						{
+							closest = abs(vecFittingPoints[i].at<double>(j, 2) - vecFittingPoints[i].at<double>(0, 2));
+							num_pt = j;
+						}
+					}
+					num_closest = num_pt / 2;
+				}
+			FittingPoints2.push_back(vecFittingPoints[i].row(num_closest));
+		}
+		//else
+		//{
+		//	int tempSize = similarVec.size() - 1;
+		//	for (int j = i; j < tempSize; ++j)
+		//	{
+		//		similarVec[j] = similarVec[j + 1] - 1;
+		//	}
+		//	similarVec.resize(tempSize);
+		//}
+	}
+
+	Mat vecXYRoted;
+	Mat vecProjectedPoints;
+	Mat FittingPoints3;
+	for (int i = 0; i != vecFittingPoints.size(); i++)
+	{
+		if (vecFittingPoints[i].rows < maxRows * 2.0 / 3.0)
+		{
+			//int tempSize = similarVec.size() - 1;
+			//for (int j = i; j < tempSize; ++j)
+			//{
+			//	similarVec[j] = similarVec[j + 1] - 1;
+			//}
+			//similarVec.resize(tempSize);
+			continue;
+		}
+		Mat dataAdjust2(vecFittingPoints[i].rows, vecFittingPoints[i].cols, CV_64FC1);
+		Mat meanPoint(1, vecFittingPoints[i].cols, CV_64FC1, cvScalar(0));
+		//ÇóÈ¡Æ½¾ùÖµ
+		for (int j = 0; j != vecFittingPoints[i].cols; j++)
+		{
+			meanPoint.at<double>(0, j) = cv::mean(vecFittingPoints[i].col(j)).val[0];
+		}
+		for (int j = 0; j != dataAdjust2.rows; j++)
+		{
+			dataAdjust2.row(j) = vecFittingPoints[i].row(j) - meanPoint;
+		}
+		vecProjectedPoints = vecFittingPoints[i] - dataAdjust2 * axesMat * axesMat.t();
+		RotToZInfo rotInfo2 = RotToZ(vecProjectedPoints, axesMat);
+		vecXYRoted = rotInfo2.XYRoted;
+		vector<PTS> points;
+		double cen_z = vecXYRoted.at<double>(0, 2);
+		for (int j = 0; j != vecXYRoted.rows; j++)
+		{
+			PTS pt(vecXYRoted.at<double>(j, 0), vecXYRoted.at<double>(j, 1));
+			points.push_back(pt);
+		}
+		double cen_x = 0;
+		double cen_y = -3;
+		double cen_r = -1;
+		CircleFitSolver *cfs = new CircleFitSolver();
+		if (cfs->circleFitL1(points, cen_x, cen_y, cen_r))
+		{
+			//if ((cen_r > 3.65) && (cen_r < 4.5))
+			{
+				Mat rot2Z_cen(1, 3, CV_64FC1, Scalar(-1));
+				rot2Z_cen.at<double>(0, 0) = cen_x;
+				rot2Z_cen.at<double>(0, 1) = cen_y;
+				rot2Z_cen.at<double>(0, 2) = cen_z;
+				Mat temp = (rotInfo2.R.inv()*(rot2Z_cen.t())).t();
+				FittingPoints3.push_back(temp);
+			}
+			//else
+			//{
+			//	if (similarVec[i] != i)
+			//	{
+			//		int index = similarVec[i];
+			//		similarVec[index] = index;
+			//		similarVec[i] = i;
+			//	}
+			//	ChoosenGroup[i] = false;
+			//}
+		}
+	}
+
+	//for (int i = 0; i != similarVec.size(); ++i)
+	//{
+	//	if (similarVec[i] != i)
+	//	{
+	//		vecFittingPoints[i].push_back(vecFittingPoints[similarVec[i]]);
+	//		++i;
+	//	}
+	//}
+	
+	int indexj = 0;
+	for (int i = 0; i != vecFittingPoints.size(); i++)
+	{
+		if (ChoosenGroup[i])
+		{
+			++indexj;
+		}
+		else
+		{
+			int tempSize = similarVec.size() - 1;
+			for (int j = indexj; j < tempSize; ++j)
+			{
+				similarVec[j] = similarVec[j + 1] - 1;
+			}
+			similarVec.resize(tempSize);
+		}
+	}
+
+	vector<bool> ChoosenGroup2 = ChoosenGroup;
+	vector<bool> ChoosenGroup3 = ChoosenGroup;
+	OpitmizePoints(FittingPoints2, ChoosenGroup2, similarVec);
+	OpitmizePoints(FittingPoints3, ChoosenGroup3, similarVec);
+	Point3d axes2 = calcPCA(FittingPoints2);
+	Point3d axes3 = calcPCA(FittingPoints3);
+	Mat axesMat2 = Mat(axes2);
+	Mat axesMat3 = Mat(axes3);
+	normalize(axesMat2, axesMat2);
+	normalize(axesMat3, axesMat3);
+	if (abs(axesMat2.dot(planeVector)) > abs(axesMat3.dot(planeVector)))
+	{
+		studFeature[1] = axesMat2.t();
+		//axesMat = axesMat2;
+	}
+	else
+	{
+		studFeature[1] = axesMat3.t();
+		//axesMat = axesMat3;
+	}
+	//axes = calcPCA(FittingPoints2);
+
+	//ÖáÏß·½ÏòÍ¶Ó°
+	//axesMat = Mat(axes);  //½«Point3f×ª»»ÎªMatÀàÐÍ£¬·½±ã×ªÖÃÒÔ¼°Ê¹ÓÃÒÑÓÐº¯Êý£¬axesMatÎª3*1
+	axesMat = planeVector;
+	//axesMat = studFeature[1].t();
+	normalize(axesMat, axesMat);
+
+	string strStudAxesPath2 = "StudClosestAxes.txt";
+	string strStudAxesPath3 = "StudCentreAxes.txt";
+	LaserSensorIO.WriteRowFirstAPP(strStudAxesPath2, axesMat2.t());
+	LaserSensorIO.WriteRowFirstAPP(strStudAxesPath3, axesMat3.t());
+
+	//FittingPoints.resize(0);
+	//for (int i = 0; i != vecFittingPoints.size(); i++)
+	//{
+	//	if (ChoosenGroup3[i])
+	//	{
+	//		FittingPoints.push_back(vecFittingPoints[i]);
+	//	}
+	//}
+
+	//string strStudPointsPath = "studPoints.txt";
+	//LaserSensorIO.WriteRowFirstAPP(strStudPointsPath, FittingPoints);
+
+	Mat dataAdjust(FittingPoints.rows, FittingPoints.cols, CV_64FC1);
+	for (int cnt = 0; cnt != FittingPoints.rows; cnt++)
+		dataAdjust.row(cnt) = FittingPoints.row(cnt) - planePoint;
+	Mat projectedPoints = FittingPoints - dataAdjust * axesMat * axesMat.t();
+	//Ðý×ªÖÁÓëXYÆ½ÃæÆ½ÐÐ
+	RotToZInfo rotInfo = RotToZ(projectedPoints, axesMat);
+
+	//Mat rot2Z_cen = HoughCircle2(rotInfo.XYRoted, 4.8, 5.0, 0.02, 0.02, CircleMeanErrorThreshold, CircleGrossErrorCoe, CircleNormalErrorCoe);
+	//Mat studCenter = rotInfo.R.inv()*(rot2Z_cen.t());
+
+	//¾àÀëÖ®ºÍ×îÐ¡·¨£¬180912
+	vector<PTS> points;
+	//bool flag = false;
+	double cen_z = rotInfo.XYRoted.at<double>(0, 2);
+
+	for (int j = 0; j != rotInfo.XYRoted.rows; j++)
+	{
+		PTS pt(rotInfo.XYRoted.at<double>(j, 0), rotInfo.XYRoted.at<double>(j, 1));
+		points.push_back(pt);
+	}
+
+	double cen_x = 0;
+	double cen_y = -3;
+	double cen_r = -1;
+	Mat studCenter;
+	CircleFitSolver *cfs = new CircleFitSolver();
+	if (cfs->circleFitL1(points, cen_x, cen_y, cen_r))
+	{
+		Mat rot2Z_cen(1, 3, CV_64FC1, Scalar(-1));
+		rot2Z_cen.at<double>(0, 0) = cen_x;
+		rot2Z_cen.at<double>(0, 1) = cen_y;
+		rot2Z_cen.at<double>(0, 2) = cen_z;
+
+		studCenter = rotInfo.R.inv()*(rot2Z_cen.t());
+	}
+
+	if (studCenter.empty())
+	{
+		return studFeature;
+	}
 	else
 	{
 		studFeature[0] = studCenter.t();
@@ -3389,9 +4909,9 @@ vector<Mat>  C3DLaserSensorFeatureExtraction::StudFit2(int num, vector<Mat> vecF
 	Mat FittingPoints;
 	Mat FittingPoints2;
 	Mat FittingPoints3;
-	for (int i = 2; i != vecFittingPoints.size(); ++i)
+	for (int i = 0; i != vecFittingPoints.size(); ++i)
 	{
-		if (vecFittingPoints[i].rows >= maxRows * 2 / 3)
+		if (vecFittingPoints[i].rows >= maxRows * 2.0 / 3.0)
 		{
 			FittingPoints.push_back(vecFittingPoints[i]);
 			int num_closest = vecFittingPoints[i].rows / 2;
@@ -3433,9 +4953,9 @@ vector<Mat>  C3DLaserSensorFeatureExtraction::StudFit2(int num, vector<Mat> vecF
 					}
 					for (int j = vecFittingPoints[i].rows - 1; j != num_dismin; --j)
 					{
-						if (closest > abs(vecFittingPoints[i].at<double>(j, 2) - vecFittingPoints[i].at<double>(vecFittingPoints[i].rows - 1, 2)))
+						if (closest > abs(vecFittingPoints[i].at<double>(j, 2) - vecFittingPoints[i].at<double>(0, 2)))
 						{
-							closest = abs(vecFittingPoints[i].at<double>(j, 2) - vecFittingPoints[i].at<double>(vecFittingPoints[i].rows - 1, 2));
+							closest = abs(vecFittingPoints[i].at<double>(j, 2) - vecFittingPoints[i].at<double>(0, 2));
 							num_pt = j;
 						}
 					}
@@ -3489,28 +5009,66 @@ vector<Mat>  C3DLaserSensorFeatureExtraction::StudFit2(int num, vector<Mat> vecF
 	//if (FittingPoints2.empty())
 	//	return studFeature;
 
-	Point3d axes1 = calcPCA(FittingPoints3);
-	//Point3d axes2 = calcPCA(FittingPoints2);
-	Point3d axes=axes1;
+	//Point3d axes1 = calcPCA(FittingPoints3);
+	Point3d axes2;
+	//Point3d axes=axes1;
 	//axes.x = axes2.x;
 	//axes.y = axes1.y;
 	//axes.z = axes1.z;	
+	
+	Mat NewFittingPoints2;
+	NewFittingPoints2.resize(0);
+	while ((FittingPoints2.rows != NewFittingPoints2.rows) && (FittingPoints2.rows > 2))
+	{
+		axes2 = calcPCA(FittingPoints2);
+		NewFittingPoints2 = FittingPoints2;
+		Point3d Point1, Point2;
+		Point1.x = cv::mean(NewFittingPoints2.col(0)).val[0];
+		Point1.y = cv::mean(NewFittingPoints2.col(1)).val[0];
+		Point1.z = cv::mean(NewFittingPoints2.col(2)).val[0];
+		Point2.x = Point1.x + 1;
+		Point2.y = axes2.y / axes2.x + Point1.y;
+		Point2.z = axes2.z / axes2.x + Point1.z;
+		vector<double> DistanceOfPointToLine;
+		double ab = sqrt(pow((Point2.x - Point1.x), 2.0) + pow((Point2.y - Point1.y), 2.0) + pow((Point2.z - Point1.z), 2.0));
+		double DisVar = 0;
+		for (int cnt = 0; cnt != NewFittingPoints2.rows; cnt++)
+		{
+			double as = sqrt(pow((Point1.x - NewFittingPoints2.at<double>(cnt, 0)), 2.0) + pow((Point1.y - NewFittingPoints2.at<double>(cnt, 1)), 2.0) + pow((Point1.z - NewFittingPoints2.at<double>(cnt, 2)), 2.0));
+			double bs = sqrt(pow((NewFittingPoints2.at<double>(cnt, 0) - Point2.x), 2.0) + pow((NewFittingPoints2.at<double>(cnt, 1) - Point2.y), 2.0) + pow((NewFittingPoints2.at<double>(cnt, 2) - Point2.z), 2.0));
+			double cos_A = (pow(as, 2.0) + pow(ab, 2.0) - pow(bs, 2.0)) / (2 * ab*as);
+			double sin_A = sqrt(1 - pow(cos_A, 2.0));
+			DistanceOfPointToLine.push_back(as * sin_A);
+			DisVar += pow(DistanceOfPointToLine[cnt], 2.0);
+		}
+		DisVar /= (2*DistanceOfPointToLine.size() - 4);
+		double DisStand = sqrt(DisVar);
+		FittingPoints2.resize(0);
+		for (int i = 0; i != DistanceOfPointToLine.size(); ++i)
+		{
+			if (DistanceOfPointToLine[i] < (2.5 * DisStand))
+			{
+				FittingPoints2.push_back(NewFittingPoints2.row(i));
+			}
+		}
+	}
+	Point3d axes = calcPCA(FittingPoints2);
 
 	//ÖáÏß·½ÏòÍ¶Ó°
 	Mat axesMat = Mat(axes);  //½«Point3f×ª»»ÎªMatÀàÐÍ£¬·½±ã×ªÖÃÒÔ¼°Ê¹ÓÃÒÑÓÐº¯Êý£¬axesMatÎª3*1
 	normalize(axesMat, axesMat);
 	studFeature[1] = axesMat.t();
 
-	string strStudPointsPath = "studPoints.txt";
-	LaserSensorIO.WriteRowFirstAPP(strStudPointsPath, FittingPoints);
+	//string strStudPointsPath = "studPoints.txt";
+	//LaserSensorIO.WriteRowFirstAPP(strStudPointsPath, FittingPoints);
 
 	Mat dataAdjust(FittingPoints.rows, FittingPoints.cols, CV_64FC1);
 	for (int cnt = 0; cnt != FittingPoints.rows; cnt++)
 		dataAdjust.row(cnt) = FittingPoints.row(cnt) - planePoint;
 	Mat projectedPoints = FittingPoints - dataAdjust * axesMat * axesMat.t();
 
-	string strResultPath111 = "pro.txt";
-	LaserSensorIO.WriteRowFirstAPP(strResultPath111, projectedPoints);
+	//string strResultPath111 = "pro.txt";
+	//LaserSensorIO.WriteRowFirstAPP(strResultPath111, projectedPoints);
 	//Ðý×ªÖÁÓëXYÆ½ÃæÆ½ÐÐ
 	RotToZInfo rotInfo = RotToZ(projectedPoints, axesMat);
 
@@ -3649,6 +5207,70 @@ Point3f C3DLaserSensorFeatureExtraction::calcLinePlaneIntersection(Mat linePoint
 	return intersection;
 }
 
+vector<vector<Mat>> C3DLaserSensorFeatureExtraction::distLineAndStud15(vector<Mat> vecCameraCoors)//ÓÃÓÚÇø·ÖÏà»ú×ø±êÏµÏÂµÄÂÝÖùÓëÆ½ÃæµãÔÆ
+{
+	vector<vector<Mat>> result(2);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+	for (int i = 0; i < vecCameraCoors.size(); ++i)
+	{
+		for (int j = 0; j < vecCameraCoors[i].rows; ++j)
+		{
+			pcl::PointXYZ pt;
+			pt.x = vecCameraCoors[i].at<double>(j, 0);
+			pt.y = vecCameraCoors[i].at<double>(j, 1);
+			pt.z = vecCameraCoors[i].at<double>(j, 2);
+			cloud->push_back(pt);
+		}
+	}
+	//´´½¨Ä£ÐÍ²ÎÊý¶ÔÏó£¬ÕâÀïÖ¸µÄÊÇÆ½ÃæÄ£ÐÍµÄ·½³Ìax+by+cz+d=0µÄ²ÎÊý
+	pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+	//´´½¨ÄÚµã¼¯ºÏ£¬ÓÃÓÚ´æ´¢·Ö¸îµÃµ½µÄÄÚµã½á¹û
+	pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+	// ´´½¨·Ö¸î¶ÔÏó
+	pcl::SACSegmentation<pcl::PointXYZ> seg;
+	// ÉèÖÃÄ£ÐÍÏµÊýÐèÒªÓÅ»¯
+	seg.setOptimizeCoefficients(true);
+	// ±ØÐëÅäÖÃ
+	seg.setModelType(0);
+	//Ö¸¶¨µ±Ç°Ä£ÐÍÊÇÆ½ÃæÄ£ÐÍ
+	seg.setMethodType(0);
+	//Ö¸¶¨·Ö¸îËã·¨²ÉÓÃËæ»ú²ÉÑùÒ»ÖÂÐÔËã·¨
+	seg.setDistanceThreshold(0.05);//ÉèÖÃ¾àÀëãÐÖµ
+	seg.setInputCloud(cloud);//ÊäÈëµãÔÆ
+	seg.segment(*inliers, *coefficients);//·Ö¸îµãÔÆ
+	//std::cerr << "Cylinder coefficients: " << *coefficients << std::endl;
+	//std::cerr << "Ä£ÐÍÄÚµã¸öÊý: "
+	//	<< inliers->indices.size() << std::endl;
+
+	vector<Mat> studPoints(vecCameraCoors.size());
+	vector<Mat> planePoints(vecCameraCoors.size());
+	for (int i = 0; i != vecCameraCoors.size(); i++)
+	{
+		for (int j = 0; j != vecCameraCoors[i].rows; j++)
+		{
+			double distance = 0;
+			for (int k = 0; k != 3; ++k)
+			{
+				distance += coefficients->values[k] * vecCameraCoors[i].at<double>(j, k);
+			}
+			distance += coefficients->values[3];
+			distance = abs(distance);
+			if (distance < 1)
+			{
+				planePoints[i].push_back(vecCameraCoors[i].row(j));
+			}
+			else
+			{
+				studPoints[i].push_back(vecCameraCoors[i].row(j));
+			}
+		}
+	}
+
+	result[0] = planePoints;
+	result[1] = studPoints;
+	return result;
+}
+
 vector<vector<Mat>> C3DLaserSensorFeatureExtraction::distLineAndStud(vector<Mat> vecCameraCoors, double r)//ÓÃÓÚÇø·ÖÏà»ú×ø±êÏµÏÂµÄÂÝÖùÓëÆ½ÃæµãÔÆ
 {
 	Mat initPoints;
@@ -3757,7 +5379,7 @@ vector<vector<Mat>> C3DLaserSensorFeatureExtraction::distLineAndStud(vector<Mat>
 	return vecPoints;
 }
 
-vector<vector<Mat>> C3DLaserSensorFeatureExtraction::distLineAndStud(vector<Mat> vecCameraCoors, double r, Mat axesMat, int bestCircle)//ÓÃÓÚÇø·ÖÏà»ú×ø±êÏµÏÂµÄÂÝÖùÓëÆ½ÃæµãÔÆ
+vector<vector<Mat>> C3DLaserSensorFeatureExtraction::distLineAndStud(const vector<Mat> &vecCameraCoors, double r,const Mat &axesMat, const int &bestCircle)//ÓÃÓÚÇø·ÖÏà»ú×ø±êÏµÏÂµÄÂÝÖùÓëÆ½ÃæµãÔÆ
 {
 	Mat initPoints = vecCameraCoors[bestCircle];
 
@@ -4216,7 +5838,7 @@ void C3DLaserSensorFeatureExtraction::Mat2Point(vector<Point> &CloudPoints,Mat I
 	}
 }
 
-Mat C3DLaserSensorFeatureExtraction::FindMax(vector<Mat> GrayPics)
+Mat C3DLaserSensorFeatureExtraction::FindMax(vector<Mat> &GrayPics)
 {
 	//Mat MaxPic(GrayPics.at(0).rows,GrayPics.at(0).cols,GrayPics.at(0).depth(),Scalar(0));
 	for (vector<Mat>::size_type RowIndex = 1; RowIndex < GrayPics.size(); RowIndex++)
@@ -4615,7 +6237,7 @@ bool C3DLaserSensorFeatureExtraction::LaserScanSensor3DFeatrueExtraction()
 				if (vecPoints[1].empty())
 					return false;
 			    //vector<Mat> studFeature = StudFit2(cnt, vecPoints[1], planeInfo.Points.t());
-				vector<Mat> studFeature = StudFit2(vecPoints[1], planeInfo.Points.t());//180525Ô­°æ
+				vector<Mat> studFeature = StudFit2(cnt, vecPoints[1], planeInfo.Points.t());//180525Ô­°æ
 			    string strStudPointPath = "StudPoint.txt";
                 string strStudAxesPath = "StudAxes.txt";
 			    LaserSensorIO.WriteRowFirstAPP(strStudPointPath, studFeature[0]);
@@ -4731,7 +6353,7 @@ bool C3DLaserSensorFeatureExtraction::LaserScanSensor3DFeatrueExtraction()
 			//ÄâºÏÂÝÖù
 			if (vecPoints[1].empty())
 				return false;
-			vector<Mat> studFeature = StudFit2(vecPoints[1], planeInfo.Points.t());//180525Ô­°æ
+			vector<Mat> studFeature = StudFit2(cnt, vecPoints[1], planeInfo.Points.t());//180525Ô­°æ
 
 			string strStudPointPath = "StudPoint.txt";
 			string strStudAxesPath = "StudAxes.txt";
@@ -4749,6 +6371,9 @@ bool C3DLaserSensorFeatureExtraction::LaserScanSensor3DFeatrueExtraction()
 	{
 		for (int cnt = 0; cnt != 100; cnt++)
 		{
+			//ÑéÖ¤×ÔÊÊÓ¦
+			//int MinThresholdArray[23] = { 14, 14, 14, 14, 76, 14, 76, 76, 76, 76, 76, 76, 76, 76, 76, 76, 76, 76, 76, 76, 76, 76, 76 };
+
 			/*180516*/
 			vector<Mat> GrayPics;
 			vector<Point> CloudPoints;
@@ -4787,7 +6412,9 @@ bool C3DLaserSensorFeatureExtraction::LaserScanSensor3DFeatrueExtraction()
 				//string strCylinderPath = strReadPath + StrFileNum + ".tiff";
 				Mat Image = imread(strCylinderPath);
 
-				ROIRect.push_back(getRect(Image, 0, 959, 80, 1200));
+				ROIRect.push_back(getRect(Image, 0, 959, 80, 1200, true));
+				//ROIRect.push_back(getRect(MinThresholdArray[i], Image, 0, 959, 80, 1200, true));
+
 				//if (ROIRect[i].width > 640)
 				//{
 				//	Rect tempRect = getRect(Image, 0, 959, 0, 1279);
@@ -4815,7 +6442,8 @@ bool C3DLaserSensorFeatureExtraction::LaserScanSensor3DFeatrueExtraction()
 					{
 						if (times > 1)
 						{
-							ROIRect[i] = getRect(Image, 0, 959, 400, 900);
+							//ROIRect[i] = getRect(Image, 0, 959, 400, 900, false);
+							ROIRect[i] = getRect(MinThresholdArray[i], Image, 0, 959, 400, 900, false);
 						}
 						else
 						{
@@ -4827,7 +6455,8 @@ bool C3DLaserSensorFeatureExtraction::LaserScanSensor3DFeatrueExtraction()
 					}
 					else
 					{
-						ROIRect[i] = getRect(Image, 0, 959, 400, 900);
+						ROIRect[i] = getRect(Image, 0, 959, 400, 900, false);
+						//ROIRect[i] = getRect(MinThresholdArray[i], Image, 0, 959, 400, 900, false);
 					}
 				}
 			}
@@ -4848,7 +6477,7 @@ bool C3DLaserSensorFeatureExtraction::LaserScanSensor3DFeatrueExtraction()
 					{
 						if (times > 1)
 						{
-							ROIRect[i] = getRect(Image, 0, 959, 400, 900);
+							ROIRect[i] = getRect(Image, 0, 959, 400, 900, false);
 						}
 						else
 						{
@@ -4860,7 +6489,7 @@ bool C3DLaserSensorFeatureExtraction::LaserScanSensor3DFeatrueExtraction()
 					}
 					else
 					{
-						ROIRect[i] = getRect(Image, 0, 959, 400, 900);
+						ROIRect[i] = getRect(Image, 0, 959, 400, 900, false);
 					}
 				}
 			}
@@ -4870,9 +6499,10 @@ bool C3DLaserSensorFeatureExtraction::LaserScanSensor3DFeatrueExtraction()
 			bool twolines = false;
 			int maxRows = 0;
 			int indexRows;
-			int indexStud = indexW + 1;
+			int indexStud;
 			if (indexW < 12) //¼ÇµÃ½« > 12 µÄ´úÂë¿éÍ³Ò»
 			{
+				indexStud = indexW + 1;
 				for (int i = 22; i != 12; i--)
 				{
 					if (ROIRect[i].width > maxRows)
@@ -4901,7 +6531,13 @@ bool C3DLaserSensorFeatureExtraction::LaserScanSensor3DFeatrueExtraction()
 						twolines = true;
 					}
 				}
-				for (int i = indexW+1; i != 13; ++i)
+				if (!twolines)
+				{
+					indexLine.push_back(indexW + 1);
+					twolines = true;
+					indexStud = indexW + 2;
+				}
+				for (int i = indexStud; i != 13; ++i)
 				{
 					//if (ROIRect[i].width > 500)
 					//{
@@ -4943,13 +6579,13 @@ bool C3DLaserSensorFeatureExtraction::LaserScanSensor3DFeatrueExtraction()
 								studRight = ROIRect[i].x + ROIRect[i].width - 1;
 							}
 						}
-						else
-							if (!twolines)
-							{
-								indexLine.push_back(i);
-								twolines = true;
-								indexStud = i + 1;
-							}
+						//else
+						//	if (!twolines)
+						//	{
+						//		indexLine.push_back(i);
+						//		twolines = true;
+						//		indexStud = i + 1;
+						//	}
 					//if ((maxWidth - ROIRect[i].width) > (ROIRect[i].width - maxRows)
 					//	&& (abs(HdivWi / HdivWW - 1) > abs(HdivWi / HdivWR - 1)))
 					//{
@@ -4981,6 +6617,7 @@ bool C3DLaserSensorFeatureExtraction::LaserScanSensor3DFeatrueExtraction()
 			}
 			else
 			{
+				indexStud = indexW - 1;
 				for (int i = 0; i != 11; i++)
 				{
 					if (ROIRect[i].width > maxRows)
@@ -5009,7 +6646,13 @@ bool C3DLaserSensorFeatureExtraction::LaserScanSensor3DFeatrueExtraction()
 						twolines = true;
 					}
 				}
-				for (int i = indexW - 1; i != 10; --i)
+				if (!twolines)
+				{
+					indexLine.push_back(indexW - 1);
+					twolines = true;
+					indexStud = indexW - 2;
+				}
+				for (int i = indexStud; i != 10; --i)
 				{
 					double HdivWi = (ROIRect[i].height * 1.0) / (ROIRect[i].width * 1.0);
 					double HdivWW = (ROIRect[indexW].height * 1.0) / (ROIRect[indexW].width * 1.0);
@@ -5047,13 +6690,13 @@ bool C3DLaserSensorFeatureExtraction::LaserScanSensor3DFeatrueExtraction()
 								studRight = ROIRect[i].x + ROIRect[i].width - 1;
 							}
 						}
-						else
-							if (!twolines)
-							{
-								indexLine.push_back(i);
-								twolines = true;
-								indexStud = i + 1;
-							}
+						//else
+						//	if (!twolines)
+						//	{
+						//		indexLine.push_back(i);
+						//		twolines = true;
+						//		indexStud = i + 1;
+						//	}
 				}
 			}
 			//if (!twolines) return false;
@@ -5061,8 +6704,18 @@ bool C3DLaserSensorFeatureExtraction::LaserScanSensor3DFeatrueExtraction()
 			//Mat planeCoors;
 			vector<Mat> planeCoorsVec;
 			int bestCircle;
+			bool firstStud = true;
+			vector<int> similarVecUsed;
+			vector<int> similarVec1;
+			vector<int> similarVec2;
 			for (int i = 0; i != 23; i++)
 			{
+				//if (i == 10 || i == 19)
+				//{
+				//	Mat defaultAllPoints(1, 2, CV_64FC1, cvScalar(-1));
+				//	vecCoors[i] = defaultAllPoints;
+				//	continue;
+				//}
 				stringstream s;
 				string StrFileNum;
 				s << (i + 1);
@@ -5113,50 +6766,62 @@ bool C3DLaserSensorFeatureExtraction::LaserScanSensor3DFeatrueExtraction()
 					//	down = 959;
 					//}
 
-					vecCoors[i] = LaserSensorStudExtraction(Image, up, down, left, right, false);
+					vecCoors[i] = LaserSensorStudExtraction(i, Image, up, down, left, right, false);
+					//vecCoors[i] = LaserSensorStudExtraction(MinThresholdArray[i], i, Image, up, down, left, right, false);
 					if (!((vecCoors[i].at<double>(0, 0) < 0) || (vecCoors[i].at<double>(0, 1) < 0)))  //ÅÅ³ýallPoints³öÏÖÄ¬ÈÏÖµµÄÇé¿ö
 					{
 						planeCoorsVec.push_back(CameraCoorDatas(vecCoors[i], CameraMatrix, DistCoeffs, LaserRotationPlaneParas.row(i)));
 						Mat2Point(CloudPoints, vecCoors[i]);//180516
 					}
 				}
-				//else
-				//	if (i == indexStud)
-				//	{
-				//		continue;
-				//	}
-					else
+				else
+				{
+					int left = studLeft;
+					int right = studRight;
+					int up = ROIRect[i].y;
+					int down = up + maxHeight;
+					//finalRect = getFinalRect(Image, up, down, left, right, true, studCentre, maxRows);
+
+					if ((up < 0) || (down>959))
 					{
-						int left = studLeft;
-						int right = studRight;
-						int up = ROIRect[i].y;
-						int down = up + maxHeight;
-						//finalRect = getFinalRect(Image, up, down, left, right, true, studCentre, maxRows);
-
-						if ((up < 0) || (down>959))
-						{
-							Mat defaultAllPoints(1, 2, CV_64FC1, cvScalar(-1));
-							vecCoors[i] = defaultAllPoints;
-							continue;
-						}
-
-						vecCoors[i] = LaserSensorStudExtraction(Image, up, down, left, right, true, maxRows);
-						if (!((vecCoors[i].at<double>(0, 0) < 0) || (vecCoors[i].at<double>(0, 1) < 0)))  //ÅÅ³ýallPoints³öÏÖÄ¬ÈÏÖµµÄÇé¿ö
-						{
-							if (i == indexRows)
-							{
-								bestCircle = vecCameraCoors.size();
-							}
-							vecCameraCoors.push_back(CameraCoorDatas(vecCoors[i], CameraMatrix, DistCoeffs, LaserRotationPlaneParas.row(i)));
-							Mat2Point(CloudPoints, vecCoors[i]);//180516
-						}
-
-						//Mat tempCoors = LaserSensorStudExtraction4(Image, up, down, left, right, true, maxRows);
-						//if (!((tempCoors.at<double>(0, 0) < 0) || (tempCoors.at<double>(0, 1) < 0)))  //ÅÅ³ýallPoints³öÏÖÄ¬ÈÏÖµµÄÇé¿ö
-						//{
-						//	vecCameraCoors2.push_back(CameraCoorDatas(tempCoors, CameraMatrix, DistCoeffs, LaserRotationPlaneParas.row(i)));
-						//}
+						Mat defaultAllPoints(1, 2, CV_64FC1, cvScalar(-1));
+						vecCoors[i] = defaultAllPoints;
+						continue;
 					}
+
+					vecCoors[i] = LaserSensorStudExtraction(i, Image, up, down, left, right, true, maxRows);
+					//vecCoors[i] = LaserSensorStudExtraction(MinThresholdArray[i], i, Image, up, down, left, right, true, maxRows);
+
+					if (!((vecCoors[i].at<double>(0, 0) < 0) || (vecCoors[i].at<double>(0, 1) < 0)))  //ÅÅ³ýallPoints³öÏÖÄ¬ÈÏÖµµÄÇé¿ö
+					{
+						int OriginSize = similarVec1.size();
+						similarVec1.push_back(OriginSize);
+						similarVec2.push_back(OriginSize);
+						if (firstStud)
+						{
+							firstStud = false;
+						}
+						else
+						{
+							if ((abs(ROIRect[i].y - ROIRect[i - 1].y) <= 20) && (!((vecCoors[i - 1].at<double>(0, 0) < 0) || (vecCoors[i - 1].at<double>(0, 1) < 0))))
+							{	
+								similarVec1[OriginSize - 1] = OriginSize;
+								similarVec1[OriginSize] = OriginSize - 1;
+							}
+							if ((abs(ROIRect[i].y - ROIRect[i - 1].y) <= 10) && (!((vecCoors[i - 1].at<double>(0, 0) < 0) || (vecCoors[i - 1].at<double>(0, 1) < 0))))
+							{
+								similarVec2[OriginSize - 1] = OriginSize;
+								similarVec2[OriginSize] = OriginSize - 1;
+							}
+						}
+					}
+
+					//Mat tempCoors = LaserSensorStudExtraction4(Image, up, down, left, right, true, maxRows);
+					//if (!((tempCoors.at<double>(0, 0) < 0) || (tempCoors.at<double>(0, 1) < 0)))  //ÅÅ³ýallPoints³öÏÖÄ¬ÈÏÖµµÄÇé¿ö
+					//{
+					//	vecCameraCoors2.push_back(CameraCoorDatas(tempCoors, CameraMatrix, DistCoeffs, LaserRotationPlaneParas.row(i)));
+					//}
+				}
 
 				//vecCoors[i] = LaserSensorStudExtraction2(strImagePath, Image, 0, 960, 400, 900, 400);
 				//vecCoors[i] = LaserSensorStudExtraction2(Image, 0, 959, 400, 900, 100, 400);
@@ -5181,6 +6846,40 @@ bool C3DLaserSensorFeatureExtraction::LaserScanSensor3DFeatrueExtraction()
 				//	vecCameraCoors.push_back(CameraCoorDatas(vecCoors[i], CameraMatrix, DistCoeffs, LaserRotationPlaneParas.row(i)));
 				//	Mat2Point(CloudPoints, vecCoors[i]);//180516
 				//}
+			}
+
+			bool UseSimilarVec2 = false;
+			for (int i = 0; i != similarVec1.size(); ++i)
+			{
+				if ((similarVec1[i] != i) && (similarVec1[similarVec1[i]] != i))
+				{
+					UseSimilarVec2 = true;
+					break;
+				}
+			}
+			if (!UseSimilarVec2)
+			{
+				similarVecUsed = similarVec1;
+			}
+			else
+			{
+				similarVecUsed = similarVec2;
+			}
+
+			for (int i = 0; i != 23; i++)
+			{
+				if (((indexW < 12) && (i >= indexStud)) || ((indexW >= 12) && (i <= indexStud)))
+				{
+					if (!((vecCoors[i].at<double>(0, 0) < 0) || (vecCoors[i].at<double>(0, 1) < 0)))  //ÅÅ³ýallPoints³öÏÖÄ¬ÈÏÖµµÄÇé¿ö
+					{
+						if (i == indexRows)
+						{
+							bestCircle = vecCameraCoors.size();
+						}
+						vecCameraCoors.push_back(CameraCoorDatas(vecCoors[i], CameraMatrix, DistCoeffs, LaserRotationPlaneParas.row(i)));
+						Mat2Point(CloudPoints, vecCoors[i]);//180516
+					}
+				}
 			}
 
 			/*180516*/
@@ -5210,8 +6909,8 @@ bool C3DLaserSensorFeatureExtraction::LaserScanSensor3DFeatrueExtraction()
 					planeCoors.push_back(planeCoorsVec[i]);
 			}
 			//´æ´¢ÄâºÏÊý¾Ý
-			string strPlanePointsPath = "planePoints.txt";
-			LaserSensorIO.WriteRowFirstAPP(strPlanePointsPath, planeCoors);
+			//string strPlanePointsPath = "planePoints.txt";
+			//LaserSensorIO.WriteRowFirstAPP(strPlanePointsPath, planeCoors);
 
 			//ÄâºÏÆ½Ãæ
 			if (planeCoors.empty())
@@ -5222,10 +6921,20 @@ bool C3DLaserSensorFeatureExtraction::LaserScanSensor3DFeatrueExtraction()
 			if (finalPlaneCoors.rows < 10)
 				return false;
 			PlaneFit3DInfo planeInfo = PlaneFit3D(finalPlaneCoors);
-			//string strPlanePointPath = "PlanePoint.txt";
-			//string strPlaneVectorPath = "PlaneVector.txt";
-			//LaserSensorIO.WriteRowFirstAPP(strPlanePointPath, planeInfo.Points.t());
-			//LaserSensorIO.WriteRowFirstAPP(strPlaneVectorPath, planeInfo.NormVector.t());
+			//Mat NormVector(3, 1, CV_64FC1, Scalar(0));
+			//NormVector.at<double>(0, 0) = -0.00107;
+			//NormVector.at<double>(1, 0) = -0.78339;
+			//NormVector.at<double>(2, 0) = 0.621532;
+			//planeInfo.NormVector = NormVector;
+			//Mat Point(3, 1, CV_64FC1, Scalar(0));
+			//Point.at<double>(0, 0) = 0.688849;
+			//Point.at<double>(1, 0) = -10.1293;
+			//Point.at<double>(2, 0) = 121.894;
+			//planeInfo.Points = Point;
+			string strPlanePointPath = "PlanePoint.txt";
+			string strPlaneVectorPath = "PlaneVector.txt";
+			LaserSensorIO.WriteRowFirstAPP(strPlanePointPath, planeInfo.Points.t());
+			LaserSensorIO.WriteRowFirstAPP(strPlaneVectorPath, planeInfo.NormVector.t());
 
 			vector<vector<Mat>> vecPoints = distLineAndStud(vecCameraCoors, 5.0, planeInfo.NormVector, bestCircle);
 			//vector<vector<Mat>> vecPoints2 = distLineAndStud(vecCameraCoors2, 5.0, planeInfo.NormVector, bestCircle);
@@ -5252,7 +6961,9 @@ bool C3DLaserSensorFeatureExtraction::LaserScanSensor3DFeatrueExtraction()
 			//ÄâºÏÂÝÖù
 			if (vecPoints[1].empty())
 				return false;
-			vector<Mat> studFeature = StudFit2(cnt, vecPoints[1], planeInfo.Points.t());//180525Ô­°æ
+			vector<Mat> studFeature = StudFit2(vecPoints[1], planeInfo.Points.t(), planeInfo.NormVector, similarVecUsed);//180525Ô­°æ
+			//vector<Mat> studFeature = Reconstruction(vecPoints[1]);
+			//vector<Mat> studFeature = StudFit14(vecPoints[1], planeInfo.Points.t());//180525Ô­°æ
 
 			string strStudPointPath = "StudPoint.txt";
 			string strStudAxesPath = "StudAxes.txt";
@@ -5305,14 +7016,244 @@ bool C3DLaserSensorFeatureExtraction::LaserScanSensor3DFeatrueExtraction()
 				}
 			}*/
 
+			//¼ÆËãÖ±ÏßÓëÆ½ÃæµÄ½»µã
+			Point3f studCenter = calcLinePlaneIntersection(studFeature[0], studFeature[1], planeInfo.Points.t(), planeInfo.NormVector.t());
+			//Point3f studCenter = calcLinePlaneIntersection(studFeature[0], studFeature[1], bestP, planeInfo.NormVector.t());
+			string strStudCenterPath = "StudCenter.txt";
+			LaserSensorIO.WriteRowFirstAPP(strStudCenterPath, studCenter);
+		}
+		break;
+	}
+	case 15:
+	{
+		for (int cnt = 0; cnt != 100; cnt++)
+		{
+			/*180516*/
+			vector<Mat> GrayPics;
+			vector<Point> CloudPoints;
+
+			stringstream a;
+			string strNum;
+			a << cnt;
+			a >> strNum;
+			string strReadPath = "NormalPart8\\" + strNum;
+			//string strReadPath = "NormalPart\\" + strNum + "\\Images\\";
+
+			Mat CameraMatrix = LaserSensorIO.ReadCameraMatrix();
+			Mat DistCoeffs = LaserSensorIO.ReadDistCoeffs();
+			Mat LaserRotationPlaneParas = LaserSensorIO.ReadLaserRotatingPlanePara(23);
+
+			vector<Mat> vecCoors(23);
+			vector<Mat> vecCameraCoors;
+			//vector<Mat> vecCameraCoors2;
+
+			int maxHeight = 0;
+			int maxWidth = 0;
+			int indexW;
+			int studLeft = 1279;
+			int studRight = 0;
+
+			//Mat planeCoors;
+			int bestCircle;
+			vector<Rect> ROIRect(23);
+			for (int i = 0; i != 23; i++)
+			{
+				stringstream s;
+				string StrFileNum;
+				s << (i + 1);
+				//s << i;//ÕÅµtÎÄ¼þ¶Á·¨
+				s >> StrFileNum;
+				string strCylinderPath = strReadPath + "\\" + StrFileNum + ".tiff";
+				//string strCylinderPath = strReadPath + StrFileNum + ".tiff";
+				Mat Image = imread(strCylinderPath);
+
+				GrayPics.push_back(Image);//180516
+
+				int left = studLeft;
+				int right = studRight;
+				int up = 0;
+				int down = 959;
+
+				vecCoors[i] = LaserSensorStudExtraction15(Image, 0, 959, 80, 1200, ROIRect[i]);
+	
+			}
+
+			//for (int i = 1; i != 23; i++)
+			//{
+			//	if (abs(ROIRect[i].y - ROIRect[i - 1].y) < 10)
+			//	{
+			//		if (vecCoors[i].rows < vecCoors[i - 1].rows)
+			//		{
+			//			Mat defaultAllPoints(1, 2, CV_64FC1, cvScalar(-1));
+			//			vecCoors[i] = defaultAllPoints;
+			//		}
+			//		else
+			//		{
+			//			Mat defaultAllPoints(1, 2, CV_64FC1, cvScalar(-1));
+			//			vecCoors[i - 1] = defaultAllPoints;
+			//		}
+			//	}
+			//}
+			for (int i = 0; i != 23; i++)
+			{
+				if (!((vecCoors[i].at<double>(0, 0) < 0) || (vecCoors[i].at<double>(0, 1) < 0)))  //ÅÅ³ýallPoints³öÏÖÄ¬ÈÏÖµµÄÇé¿ö
+				{
+					vecCameraCoors.push_back(CameraCoorDatas(vecCoors[i], CameraMatrix, DistCoeffs, LaserRotationPlaneParas.row(i)));
+					Mat2Point(CloudPoints, vecCoors[i]);//180516
+				}
+			}
+
+			/*180516*/
+			Mat OneRGBPic = FindMax(GrayPics);
+			for (vector<Point>::size_type RowIndex = 0; RowIndex < CloudPoints.size(); RowIndex++)
+			{
+				circle(OneRGBPic, CloudPoints.at(RowIndex), 4, Scalar(0, 0, 255), -1);
+			}
+			string strImagePath = "Totalimage\\" + strNum + ".tiff";
+			imwrite(strImagePath, OneRGBPic);
+
+			//if (vecCameraCoors.size() < 8)
+			//{
+			//	continue;
+			//}
+			if (vecCameraCoors.size() < 6)
+			{
+				continue;
+			}
+
+			vector<vector<Mat>> vecPoints = distLineAndStud15(vecCameraCoors);
+
+			Mat planeCoors;
+			for (int i = 0; i != vecPoints[0].size(); i++)
+			{
+				//if (planeCoorsVec[i].rows > 50)
+				planeCoors.push_back(vecPoints[0][i]);
+			}
+			//´æ´¢ÄâºÏÊý¾Ý
+			//string strPlanePointsPath = "planePoints.txt";
+			//LaserSensorIO.WriteRowFirstAPP(strPlanePointsPath, planeCoors);
+
+			//ÄâºÏÆ½Ãæ
+			if (planeCoors.empty())
+				return false;
+			Mat finalPlaneCoors = PlaneThreshod(planeCoors, PlaneMeanError, PlaneGrossError, PlaneNormalError);
+			//string strResultPath2 = "finalPlaneCoors.txt";
+			//LaserSensorIO.WriteRowFirstAPP(strResultPath2, finalPlaneCoors);
+			if (finalPlaneCoors.rows < 10)
+				return false;
+			PlaneFit3DInfo planeInfo = PlaneFit3D(finalPlaneCoors);
 			string strPlanePointPath = "PlanePoint.txt";
 			string strPlaneVectorPath = "PlaneVector.txt";
 			LaserSensorIO.WriteRowFirstAPP(strPlanePointPath, planeInfo.Points.t());
 			LaserSensorIO.WriteRowFirstAPP(strPlaneVectorPath, planeInfo.NormVector.t());
 
+			//vector<vector<Mat>> vecPoints2 = distLineAndStud(vecCameraCoors2, 5.0, planeInfo.NormVector, bestCircle);
+
+			//ÄâºÏÂÝÖù
+			if (vecPoints[1].empty())
+				return false;
+			vector<Mat> studFeature = StudFit15(vecPoints[1], planeInfo.Points.t());//180525Ô­°æ
+			//vector<Mat> studFeature = Reconstruction(vecPoints[1]);
+
+			string strStudPointPath = "StudPoint.txt";
+			string strStudAxesPath = "StudAxes.txt";
+			LaserSensorIO.WriteRowFirstAPP(strStudPointPath, studFeature[0]);
+			LaserSensorIO.WriteRowFirstAPP(strStudAxesPath, studFeature[1]);
+
+			//string strPlanePointPath = "PlanePoint.txt";
+			//string strPlaneVectorPath = "PlaneVector.txt";
+			//LaserSensorIO.WriteRowFirstAPP(strPlanePointPath, planeInfo.Points.t());
+			//LaserSensorIO.WriteRowFirstAPP(strPlaneVectorPath, planeInfo.NormVector.t());
+
 			//¼ÆËãÖ±ÏßÓëÆ½ÃæµÄ½»µã
 			Point3f studCenter = calcLinePlaneIntersection(studFeature[0], studFeature[1], planeInfo.Points.t(), planeInfo.NormVector.t());
 			//Point3f studCenter = calcLinePlaneIntersection(studFeature[0], studFeature[1], bestP, planeInfo.NormVector.t());
+			string strStudCenterPath = "StudCenter.txt";
+			LaserSensorIO.WriteRowFirstAPP(strStudCenterPath, studCenter);
+		}
+		break;
+	}
+	case 16://2016.03.12  Ê¹ÓÃdistLineAndStudº¯ÊýÇø·ÖÖ±ÏßÓëÂÝÖù£¬²¢ÇÒÓÃ×î¼òµ¥µÄHoughCircleÖ±½Ó½øÐÐÌáÈ¡µãÔÆÄâºÏÔ²
+	{
+		for (int cnt = 0; cnt != 100; cnt++)
+		{
+			stringstream a;
+			string strNum;
+			a << cnt;
+			a >> strNum;
+			string strReadPath = "NormalPart3\\" + strNum;
+
+			Mat CameraMatrix = LaserSensorIO.ReadCameraMatrix();
+			Mat DistCoeffs = LaserSensorIO.ReadDistCoeffs();
+			Mat LaserRotationPlaneParas = LaserSensorIO.ReadLaserRotatingPlanePara(23);
+
+			vector<Mat> vecCoors(23);
+			vector<Mat> vecCameraCoors;
+
+			for (int i = 0; i != 23; i++)
+			{
+				stringstream s;
+				string StrFileNum;
+				s << (i + 1);
+				//s << i;//ÕÅµtÎÄ¼þ¶Á·¨
+				s >> StrFileNum;
+				string strCylinderPath = strReadPath + "\\" + StrFileNum + ".tiff";
+				//string strCylinderPath = strReadPath + StrFileNum + ".tiff";
+				Mat Image = imread(strCylinderPath);
+
+				string strStudPath = "studPoints.txt";
+				vecCoors[i] = LaserSensorStudExtraction2(Image, 100, 900, 400, 900, 45, 400);
+
+				//ÀûÓÃÏà»úÄÚ²ÎÊýºÍ¹âÆ½Ãæ±ê¶¨²ÎÊý½«Í¼Ïñ×ø±êÖµ×ª»»µ½Ïà»ú×ø±êÏµÏÂµÄ×ø±êÖµ
+				if (!((vecCoors[i].at<double>(0, 0) < 0) || (vecCoors[i].at<double>(0, 1) < 0)))  //ÅÅ³ýallPoints³öÏÖÄ¬ÈÏÖµµÄÇé¿ö
+				{
+					vecCameraCoors.push_back(CameraCoorDatas(vecCoors[i], CameraMatrix, DistCoeffs, LaserRotationPlaneParas.row(i)));
+				}
+			}
+
+			if (vecCameraCoors.size() < 8)
+			{
+				LaserSensorIO.WriteLog("Error:vecCameraCoors.size() < 8");
+				return false;
+			}
+
+			vector<vector<Mat>> vecPoints = distLineAndStud(vecCameraCoors, 5.0);
+
+			Mat planeCoors;
+			for (int i = 0; i != vecPoints[0].size(); i++)
+			{
+				if (vecPoints[0][i].rows > 50)
+					planeCoors.push_back(vecPoints[0][i]);
+			}
+			//´æ´¢ÄâºÏÊý¾Ý
+			string strPlanePointsPath = "planePoints.txt";
+			LaserSensorIO.WriteRowFirstAPP(strPlanePointsPath, planeCoors);
+
+			//ÄâºÏÆ½Ãæ
+			if (planeCoors.empty())
+				return false;
+			Mat finalPlaneCoors = PlaneThreshod(planeCoors, PlaneMeanError, PlaneGrossError, PlaneNormalError);
+			string strResultPath2 = "finalPlaneCoors.txt";
+			LaserSensorIO.WriteRowFirstAPP(strResultPath2, finalPlaneCoors);
+			if (finalPlaneCoors.rows < 10)
+				return false;
+			PlaneFit3DInfo planeInfo = PlaneFit3D(finalPlaneCoors);
+			string strPlanePointPath = "PlanePoint.txt";
+			string strPlaneVectorPath = "PlaneVector.txt";
+			LaserSensorIO.WriteRowFirstAPP(strPlanePointPath, planeInfo.Points.t());
+			LaserSensorIO.WriteRowFirstAPP(strPlaneVectorPath, planeInfo.NormVector.t());
+
+			//ÄâºÏÂÝÖù
+			if (vecPoints[1].empty())
+				return false;
+			vector<Mat> studFeature = StudFit3(vecPoints[1], planeInfo.Points.t());
+			string strStudPointPath = "StudPoint.txt";
+			string strStudAxesPath = "StudAxes.txt";
+			LaserSensorIO.WriteRowFirstAPP(strStudPointPath, studFeature[0]);
+			LaserSensorIO.WriteRowFirstAPP(strStudAxesPath, studFeature[1]);
+
+			//¼ÆËãÖ±ÏßÓëÆ½ÃæµÄ½»µã
+			Point3f studCenter = calcLinePlaneIntersection(studFeature[0], studFeature[1], planeInfo.Points.t(), planeInfo.NormVector.t());
 			string strStudCenterPath = "StudCenter.txt";
 			LaserSensorIO.WriteRowFirstAPP(strStudCenterPath, studCenter);
 		}

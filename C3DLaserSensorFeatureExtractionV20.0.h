@@ -69,6 +69,22 @@
  *  \n 20150424 v0.1 定义了C3DLaserSensorRSerialIO类，并完成6个成员函数的编写
  */
 #pragma once
+#include <pcl/ModelCoefficients.h>
+#include <pcl/point_types.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/filters/extract_indices.h>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/features/normal_3d.h>
+#include <pcl/kdtree/kdtree.h>
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/model_types.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/segmentation/extract_clusters.h>
+#include <iosfwd>
+#include <iomanip>  
+#include "direct.h"
+#include"stdlib.h"
+
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 #include "C3DLaserSensorRSerialIOV11.0.h"
@@ -155,35 +171,40 @@ public:
 #pragma region ///// 特征提取函数的实现
 	//////////////////////两步提取被测特征值
 
-	Mat LaserSensorPointCloudsExtraction( Mat Img, int Threshold=150, int ArcLengthValue=50, Size KernelSize=Size(5,5));////// 返回被测特征的全部点云数据
+	Mat LaserSensorPointCloudsExtraction( Mat Img, int Threshold=150, int ArcLengthValue=50, Size2i KernelSize=Size2i(5,5));////// 返回被测特征的全部点云数据
 
 	vector<Mat> LaserSensorCylinderExtraction( Mat Img, int uplimit, int downlimint, int leftlimit, int rightlimit, 
-		int Threshold=150, int ArcLengthValue=50, Size KernelSize=Size(5,5));////// 返回柱面拟合所需的点云数据
+		int Threshold=150, int ArcLengthValue=50, Size2i KernelSize=Size2i(5,5));////// 返回柱面拟合所需的点云数据
 	
-	//Mat LaserSensorStudExtraction4(Mat Img, int uplimit, int downlimint, int leftlimit, int rightlimit,
-	//	bool studFlag, int widthValue = 0, Size KernelSize = Size(5, 5));////// 返回柱面拟合所需的点云数据
-	Mat LaserSensorStudExtraction(Mat Img, int uplimit, int downlimint, int leftlimit, int rightlimit, 
-		bool studFlag, int widthValue = 0, Size KernelSize = Size(5, 5));////// 返回柱面拟合所需的点云数据
+	Mat LaserSensorStudExtraction(const int &Threshold, int num, const Mat &Img, int uplimit, int downlimint, int leftlimit, int rightlimit,
+		bool studFlag, int widthValue = 0, Size2i KernelSize = Size2i(5, 5));////// 返回柱面拟合所需的点云数据，验证阈值	
+	Mat LaserSensorStudExtraction15(Mat Img, int uplimit, int downlimint, int leftlimit, int rightlimit,
+		Rect &PicROI, Size2i KernelSize = Size2i(5, 5));////// 返回柱面拟合所需的点云数据
+	Mat LaserSensorStudExtraction(int num, const Mat &Img, int uplimit, int downlimint, int leftlimit, int rightlimit, 
+		bool studFlag, int widthValue = 0, Size2i KernelSize = Size2i(5, 5));////// 返回柱面拟合所需的点云数据
 	Mat LaserSensorStudExtraction3(Mat Img, int uplimit, int downlimint, int leftlimit, int rightlimit,
-		int Threshold = 150, int ArcLengthValue = 50, Size KernelSize = Size(5, 5));////// 返回柱面拟合所需的点云数据，针对螺牙的优化，效果一般
+		int Threshold = 150, int ArcLengthValue = 50, Size2i KernelSize = Size2i(5, 5));////// 返回柱面拟合所需的点云数据，针对螺牙的优化，效果一般
 	Mat LaserSensorStudExtraction2( Mat Img, int uplimit, int downlimint, int leftlimit, int rightlimit, 
-		int Threshold=150, int ArcLengthValue=50, Size KernelSize=Size(5,5));////// 返回柱面拟合所需的点云数据
+		int Threshold=150, int ArcLengthValue=50, Size2i KernelSize=Size2i(5,5));////// 返回柱面拟合所需的点云数据
 	Mat LaserSensorStudExtraction2(string strImagePath, Mat Img, int uplimit, int downlimint, int leftlimit, int rightlimit,
-		int ArcLengthValue = 50, Size KernelSize = Size(5, 5));////// 返回柱面拟合所需的点云数据
+		int ArcLengthValue = 50, Size2i KernelSize = Size2i(5, 5));////// 返回柱面拟合所需的点云数据
 	Mat LaserSensorStudExtraction( Mat Img, int uplimit, int downlimint, int leftlimit, int rightlimit, 
-		int Threshold=150, int ArcLengthValue=50, Size KernelSize=Size(5,5));////// 返回柱面拟合所需的点云数据
+		int Threshold=150, int ArcLengthValue=50, Size2i KernelSize=Size2i(5,5));////// 返回柱面拟合所需的点云数据
 	vector<Mat>  StudFit(Mat FittingPoints, double CircleMeanErrorThreshold = 0.2, double CircleGrossErrorCoe = 0.1, double CircleNormalErrorCoe = 3);///////柱面可能返回中心坐标值+法线
 	vector<Mat>  StudFit(vector<Mat> vecFittingPoints, double CircleMeanErrorThreshold = 0.2, double CircleGrossErrorCoe = 0.1, double CircleNormalErrorCoe = 3);///////柱面可能返回中心坐标值+法线
-	vector<Mat>  StudFit2(vector<Mat> vecFittingPoints, Mat planePoint, double CircleMeanErrorThreshold = 0.2, double CircleGrossErrorCoe = 0.1, double CircleNormalErrorCoe = 3);///////柱面可能返回中心坐标值+法线
+	vector<Mat>  StudFit2(vector<Mat> &vecFittingPoints, Mat planePoint, Mat planeVector, vector<int> similarVec, double CircleMeanErrorThreshold = 0.2, double CircleGrossErrorCoe = 0.1, double CircleNormalErrorCoe = 3);///////柱面可能返回中心坐标值+法线
 	vector<Mat>  StudFit2(int num, vector<Mat> vecFittingPoints, Mat planePoint, double CircleMeanErrorThreshold = 0.2, double CircleGrossErrorCoe = 0.1, double CircleNormalErrorCoe = 3);///////柱面可能返回中心坐标值+法线
     vector<Mat>  StudFit3(vector<Mat> vecFittingPoints, Mat planePoint, double CircleMeanErrorThreshold = 0.2, double CircleGrossErrorCoe = 0.1, double CircleNormalErrorCoe = 3);//柱面返回中心坐标值+法线
 	vector<Mat>  StudFit3(int num, vector<Mat> vecFittingPoints, Mat planePoint, double CircleMeanErrorThreshold = 0.2, double CircleGrossErrorCoe = 0.1, double CircleNormalErrorCoe = 3);//柱面返回中心坐标值+法线
+	vector<Mat>  StudFit15(vector<Mat> &vecFittingPoints, Mat planePoint, double CircleMeanErrorThreshold = 0.2, double CircleGrossErrorCoe = 0.1, double CircleNormalErrorCoe = 3);///////柱面可能返回中心坐标值+法线
+	vector<Mat>  Reconstruction(Mat &vecFittingPoints, double &radius);
+	vector<Mat>  StudFit14(vector<Mat> &vecFittingPoints, Mat planePoint, double CircleMeanErrorThreshold = 0.2, double CircleGrossErrorCoe = 0.1, double CircleNormalErrorCoe = 3);///////柱面可能返回中心坐标值+法线
 
 #pragma endregion 
 
 #pragma region //////////////////////// 光刀中心提取所需的基本函数
 	//////自适应光刀中心提取函数
-	Mat LaserStripeExtraction(Mat ImgGray,int Threshold=150,int ArcLengthValue=50,Size KernelSize=Size(5,5));
+	Mat LaserStripeExtraction(Mat ImgGray,int Threshold=150,int ArcLengthValue=50,Size2i KernelSize=Size2i(5,5));
 
 
 	///////将提取的轮廓按照周长由大到小排序
@@ -195,18 +216,18 @@ public:
 
 	////////////扩展感兴趣区域,在不超过图片边界的情况下
 	/////////// 向上向下扩展一定的像素(上下分别扩展10个像素肯定够了)
-	Rect ExtendedROI(Mat ImgGray,Rect OutRect,int PixelNum=10);
+	Rect ExtendedROI(const Mat &ImgGray,const Rect &OutRect,int PixelNum=10);
 
 	//////////// 确定初始光刀线的中心位置
-	Mat OriginalCenter(Mat LaserStripSmoothed);
+	Mat OriginalCenter(const Mat &LaserStripSmoothed);
 
 	/////////// 确定光刀线的边界灰度阈值，确定光刀线的宽度
-	Mat DetermineEdgeValue(Mat LaserStripSmoothed,Mat Index);
+	Mat DetermineEdgeValue(const Mat &LaserStripSmoothed, const Mat &Index);
 
 	////////////
-	Mat DetermineCenters(Mat LaserStripSmoothed,Mat Index, Mat ThresholdValue,Rect ROIRect);
+	Mat DetermineCenters(const Mat &LaserStripSmoothed, const Mat &Index, const Mat &ThresholdValue, const Rect &ROIRect);
 
-	Mat CameraCoorDatas(Mat ImageDatas, Mat CameraMatrix, Mat DistCoeffs, Mat LaserPlaneParas);///////利用相机内参数和光平面参数进行3维重建
+	Mat CameraCoorDatas(const Mat &ImageDatas, const Mat &CameraMatrix, const Mat &DistCoeffs, const Mat &LaserPlaneParas);///////利用相机内参数和光平面参数进行3维重建
 
 	//Mat TwoPointsCameraCoorDatas(Mat ImageDatas, Mat CameraMatrix, Mat DistCoeffs, Mat ReadLaserRotatingPlaneParas);///////利用相机内参数和光平面参数进行3维重建
 
@@ -215,7 +236,7 @@ public:
 
 #pragma  region ///////// 特征拟合所需的基本类
 
-	PlaneFit3DInfo PlaneFit3D(Mat X,int flag=0);/////// 平面拟合
+	PlaneFit3DInfo PlaneFit3D(const Mat &X,int flag=0);/////// 平面拟合
 
 	/////////////
 
@@ -224,40 +245,45 @@ public:
 	CircleFitGradientInfo CircleCurrentIteration(Mat Par,Mat X);
 	LMCircleFitInfo LMCircleFit2D(Mat X,int MaxIter=100,double LambdaIni=1);
 	PProjectToPlaneInfo PProjectToPlane(Mat XY);
-	RotToZInfo RotToZ(Mat XY,Mat VT);
+	RotToZInfo RotToZ(const Mat &XY, const Mat &VT);
 	Mat Angvec2r(double theta,Mat k);
 
 	/////////// moidified in 20150603
 	double EliminateGrossError(Mat Error,double MeanErrorThreshold=0.2,double GrossErrorCoe=0.5,double NormalErrorCoe=3);           //////// 剔除粗大误差
-	Mat PlaneThreshod(Mat PlaneFitData, double PlaneMeanErrorThreshold=0.1,double PlaneGrossErrorCoe=0.1,double PlaneNormalErrorCoe=3); 
+	Mat PlaneThreshod(Mat &PlaneFitData, double PlaneMeanErrorThreshold = 0.1, double PlaneGrossErrorCoe = 0.1, double PlaneNormalErrorCoe = 3);
 	CircleFit3DInfo CircleFit3D(Mat X,double CircleMeanErrorThreshold=0.2,double CircleGrossErrorCoe=0.1,double CircleNormalErrorCoe=3); 
 
 	static bool PointValueAsc(Point2d pt1,Point2d pt2);
     Mat HoughCircle(Mat Camera3DData, Mat XYRoted, double min_r, double max_r, double step_r = 0.1, double step_theta = 0.01, double CircleMeanErrorThreshold=0.2,double CircleGrossErrorCoe=0.1,double CircleNormalErrorCoe=3);//标准Hough圆检测消除异常点
     Mat HoughCircle(vector<Mat> Camera3DData, vector<Mat> vecXYRoted, Mat XYRoted, double min_r, double max_r, double step_r = 0.1, double step_theta = 0.01, double CircleMeanErrorThreshold=0.2,double CircleGrossErrorCoe=0.1,double CircleNormalErrorCoe=3);//标准Hough圆检测消除异常点
 	Mat HoughCircle(Mat axesMat, int num, vector<Mat> Camera3DData, vector<Mat> vecXYRoted, Mat XYRoted, double min_r, double max_r, double step_r = 0.1, double step_theta = 0.01, double CircleMeanErrorThreshold = 0.2, double CircleGrossErrorCoe = 0.1, double CircleNormalErrorCoe = 3);//标准Hough圆检测消除异常点
-	Mat HoughCircle2(vector<Mat> Camera3DData, vector<Mat> vecXYRoted, Mat XYRoted, double min_r, double max_r, double step_r = 0.1, double step_theta = 0.01, double CircleMeanErrorThreshold = 0.2, double CircleGrossErrorCoe = 0.1, double CircleNormalErrorCoe = 3);//标准Hough圆检测消除异常点 //180525 取票数排在前N名的点
+	Mat HoughCircle2(Mat &XYRoted, double min_r, double max_r, double step_r = 0.1, double step_theta = 0.01, double CircleMeanErrorThreshold = 0.2, double CircleGrossErrorCoe = 0.1, double CircleNormalErrorCoe = 3);//标准Hough圆检测消除异常点 //180525 取票数排在前N名的点
 	Mat HoughCircle2(Mat axesMat, int num, vector<Mat> Camera3DData, vector<Mat> vecXYRoted, Mat XYRoted, double min_r, double max_r, double step_r = 0.1, double step_theta = 0.01, double CircleMeanErrorThreshold = 0.2, double CircleGrossErrorCoe = 0.1, double CircleNormalErrorCoe = 3);//标准Hough圆检测消除异常点 //180525 取票数排在前N名的点
 
-	Point3d calcPCA(Mat Camera3DData);//三维数据PCA算法求取柱体轴线
+	Point3d calcPCA(const Mat &Camera3DData);//三维数据PCA算法求取柱体轴线
 
 	Point3f calcLinePlaneIntersection(Mat linePoint, Mat lineVector, Mat planePoint, Mat planeVector);//计算螺柱轴线与平面的交点
 	vector<vector<Mat>> distLineAndStud(vector<Mat> vecCameraCoors, double r);//用于区分相机坐标系下的螺柱与平面点云
 	Mat Kasa(Mat fittingPoints, Point3d axesMat);//最小二乘拟合圆,返回圆心坐标
 	void C3DLaserSensorFeatureExtraction::Mat2Point(vector<Point> &CloudPoints,Mat ImageCoor);
-	Mat FindMax(vector<Mat> GrayPics);
+	Mat FindMax(vector<Mat> &GrayPics);
 	Rect ExtendedOrignalROI(Rect OriginalRect,int VExtendValue,int HExtendValue,int HightValue,int WidthValue);
 #pragma endregion
 
 #pragma endregion
 
-	int GetIterativeBestThreshold(MatND HistGram);
+	int Get1DMaxEntropyThreshold(const MatND &HistGram);
+	int GetIterativeBestThreshold(const MatND &HistGram);
 	int GetOSTUThreshold(MatND HistGram);
 
-	Rect getRect(Mat Img, int uplimit, int downlimint, int leftlimit, int rightlimit);
+	void OpitmizePoints(Mat &FittingPoints2, vector<bool> &ChoosenGroup, vector<int> similarVec);
+
+	Rect getRect(const Mat &Img, int uplimit, int downlimint, int leftlimit, int rightlimit, bool full);
+	Rect getRect(const int &Threshold, const Mat &Img, int uplimit, int downlimint, int leftlimit, int rightlimit, bool full);
 	//Rect getFinalRect(Mat Img, int uplimit, int downlimint, int leftlimit, int rightlimit, bool studFlag,
 	//	 int centre=0, int widthValue=0);
-	vector<vector<Mat>> distLineAndStud(vector<Mat> vecCameraCoors, double r, Mat planeVector, int bestCircle);
+	vector<vector<Mat>> distLineAndStud(const vector<Mat> &vecCameraCoors, double r, const Mat &planeVector, const int &bestCircle);
+	vector<vector<Mat>> distLineAndStud15(vector<Mat> vecCameraCoors);
 };
 
 
